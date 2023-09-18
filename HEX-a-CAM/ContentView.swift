@@ -85,6 +85,7 @@ struct ContentView: View {
     @State var showCamera = false
     @State var showPopup = false
     @State var showCaptureButton = false
+    @State var isButtonClicked = false  // New state variable for button toggle
 
     var body: some View {
         ZStack {
@@ -95,8 +96,8 @@ struct ContentView: View {
             }
             
             if showGIF {
-                ImageViewWrapper(imageName: "launch") { _ in  // Ignoring the duration parameter
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {  // Hard-coding 5 seconds
+                ImageViewWrapper(imageName: "launch") { _ in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
                         withAnimation {
                             self.showGIF = false
                             self.showCamera = true
@@ -106,7 +107,6 @@ struct ContentView: View {
                         self.showCaptureButton = true
                     }
                 }
-
             }
             
             if showCamera && !showGIF {
@@ -117,23 +117,25 @@ struct ContentView: View {
             
             if showCaptureButton && showCamera {
                 Button(action: {
-                    let generator = UINotificationFeedbackGenerator()
-                    for _ in 1...6 {
-                        generator.notificationOccurred(.success)
+                    withAnimation {
+                        self.isButtonClicked.toggle()
                     }
-                    self.showPopup = true
                 }) {
-                    Image(systemName: "camera.circle.fill")
-                        .resizable()
-                        .frame(width: 60, height: 60)
-                        .foregroundColor(Color.white)
-                        .background(Color.blue)
-                        .clipShape(Circle())
-                        .shadow(radius: 10)
+                    if isButtonClicked {
+                        Image(systemName: "checkmark.circle")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(Color.white)
+                    } else {
+                        Image(systemName: "button.programmable")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(Color.white)
+                    }
                 }
                 .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 60)
             }
-
+            
             if showPopup {
                 VStack {
                     Text("Color Name")
@@ -173,3 +175,4 @@ extension Color {
         )
     }
 }
+
