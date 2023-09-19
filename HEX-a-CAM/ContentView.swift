@@ -113,6 +113,13 @@ struct ContentView: View {
                 ColorChangingComponent(color: Color(hex: detectedHexColor))
                     .frame(width: 100, height: 100)
                     .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+
+                // Only show the smaller hex code text if showHexColor is true
+                if showHexColor {
+                    Text(detectedHexColor)
+                        .font(.system(size: 14))  // Smaller font size
+                        .position(x: UIScreen.main.bounds.width / 2, y: (UIScreen.main.bounds.height / 2) + 60)  // Positioned right under the component
+                }
             }
             
             if showCaptureButton && showCamera {

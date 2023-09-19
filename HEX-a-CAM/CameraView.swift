@@ -13,34 +13,22 @@ struct CameraView: View {
     @Binding var expandCamera: Bool
     @Binding var showHexColor: Bool
     @StateObject var cameraViewModel = CameraViewModel()
-    @Binding var detectedHexColor: String  // The Binding variable
+    @Binding var detectedHexColor: String
     
     var body: some View {
         ZStack {
             CameraPreview(cameraViewModel: cameraViewModel)
                 .ignoresSafeArea()
             
-            if showHexColor {
-                VStack {
-                    Spacer()
-                    Text(cameraViewModel.colorHex)
-                        .font(.largeTitle)
-                        .bold()
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color.black.opacity(0.7))
-                        .cornerRadius(10)
-                }
-                .padding()
-                .onAppear {  // Update detectedHexColor when the Text appears
-                    self.detectedHexColor = cameraViewModel.colorHex
-                }
-                .onChange(of: cameraViewModel.colorHex) { newValue in
-                    self.detectedHexColor = newValue
-                }
-            }
+    
         }
         .onAppear(perform: cameraViewModel.configureCaptureSession)
+        .onAppear {  // Update detectedHexColor when the view appears
+            self.detectedHexColor = cameraViewModel.colorHex
+        }
+        .onChange(of: cameraViewModel.colorHex) { newValue in
+            self.detectedHexColor = newValue
+        }
     }
 }
 
@@ -63,4 +51,3 @@ struct CameraPreview: UIViewRepresentable {
         // No need to update the UIView as the AVCaptureVideoPreviewLayer will handle updates.
     }
 }
-
