@@ -100,7 +100,9 @@ struct ContentView: View {
     @State var showPopup = false
     @State var showCaptureButton = false
     @State var isButtonClicked = false  // New state variable for button toggle
-
+    @State var reverseRotation = false
+    @State var scale: CGFloat = 1.0
+    
     var body: some View {
         ZStack {
             if showCamera {
@@ -124,9 +126,10 @@ struct ContentView: View {
             }
             
             if showCamera && !showGIF {
-                ColorChangingComponent(color: Color(hex: detectedHexColor))
-                    .frame(width: 100, height: 100)
-                    .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+                            ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $scale)
+                                .frame(width: 100 * scale, height: 100 * scale)  // Scaled size
+                                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+                        }
 
                 // Only show the smaller hex code text if showHexColor is true
                 if showHexColor {
@@ -174,7 +177,6 @@ struct ContentView: View {
             self.showGIF = true
         }
     }
-}
 
 extension Color {
     init(hex: String) {
