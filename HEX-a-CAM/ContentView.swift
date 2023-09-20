@@ -4,8 +4,8 @@
 //
 //  Created by GEET on 9/3/23.
 
-import SwiftUI
 
+import SwiftUI
 
 func fireworkHapticEffect() {
     let generator = UIImpactFeedbackGenerator(style: .heavy)
@@ -22,6 +22,8 @@ func fireworkHapticEffect() {
 
 struct ColorChangingComponent: View {
     var color: Color
+    @Binding var reverseRotation: Bool
+    @Binding var scale: CGFloat
     @State private var rotation: Double = 0
     
     var body: some View {
@@ -29,7 +31,8 @@ struct ColorChangingComponent: View {
             .resizable()
             .scaledToFit()
             .colorMultiply(color)
-            .rotationEffect(.degrees(rotation))
+            .rotationEffect(.degrees(reverseRotation ? -rotation : rotation))
+            .scaleEffect(scale)
             .onAppear() {
                 withAnimation(Animation.linear(duration: 10).repeatForever(autoreverses: false)) {
                     rotation = 360
@@ -37,6 +40,7 @@ struct ColorChangingComponent: View {
             }
     }
 }
+
 
 struct CrosshairView: View {
     var body: some View {
@@ -97,12 +101,11 @@ struct ContentView: View {
     @State var showGIF = true
     @State var detectedHexColor: String = "#FFFFFF"
     @State var showCamera = false
-    @State var showPopup = false
     @State var showCaptureButton = false
-    @State var isButtonClicked = false  // New state variable for button toggle
-    @State var reverseRotation = false
+    @State var isButtonClicked = false
+    @State var reverseRotation: Bool = false
     @State var scale: CGFloat = 1.0
-    
+
     var body: some View {
         ZStack {
             if showCamera {
@@ -126,77 +129,52 @@ struct ContentView: View {
             }
             
             if showCamera && !showGIF {
-                            ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $scale)
-                                .frame(width: 100 * scale, height: 100 * scale)  // Scaled size
-                                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
-                        }
-
-                // Only show the smaller hex code text if showHexColor is true
-                if showHexColor {
-                    Text(detectedHexColor)
-                        .font(.system(size: 14))  // Smaller font size
-                        .position(x: UIScreen.main.bounds.width / 2, y: (UIScreen.main.bounds.height / 2) + 60)  // Positioned right under the component
-                }
+                ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $scale)
+                    .frame(width: 100 * scale, height: 100 * scale)
+                    .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
             }
             
             if showCaptureButton && showCamera {
-                            Button(action: {
-                                fireworkHapticEffect()  // Call the haptic function
-                                withAnimation {
-                                    self.isButtonClicked.toggle()
-                                }
-                            }) {
-                                if isButtonClicked {
-                                    Image(systemName: "checkmark.circle")
-                                        .resizable()
-                                        .frame(width: 60, height: 60)
-                                        .foregroundColor(Color.white)
-                                } else {
-                                    Image(systemName: "button.programmable")
-                                        .resizable()
-                                        .frame(width: 60, height: 60)
-                                        .foregroundColor(Color.white)
-                                }
-                            }
-                            .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)  // Position adjusted to avoid overlap
-                        }
-            
-            if showPopup {
-                VStack {
-                    Text("Color Name")
-                    Text(detectedHexColor)
-                        .bold()
+                Button(action: {
+                    withAnimation {
+                        self.isButtonClicked.toggle()
+                        self.reverseRotation.toggle()
+                        self.scale = self.isButtonClicked ? 0.5 : 1.0
+                    }
+                }) {
+                    Image(systemName: isButtonClicked ? "checkmark.circle" : "button.programmable")
+                        .resizable()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(isButtonClicked ? Color.green : Color.white)
                 }
-                .frame(width: 200, height: 100)
-                .background(Color.white)
-                .cornerRadius(10)
-                .shadow(radius: 10)
+                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
             }
         }
         .onAppear() {
             self.showGIF = true
         }
     }
+}
+
 
 extension Color {
     init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let r, g, b: UInt64
-        switch hex.count {
-        case 6:
-            (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (r, g, b) = (1, 1, 1)
-        }
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: 1
-        )
-    }
-}
-
+                    let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+                    var int: UInt64 = 0
+                    Scanner(string: hex).scanHexInt64(&int)
+                    let r, g, b: UInt64
+                    switch hex.count {
+                    case 6:
+                        (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
+                    default:
+                        (r, g, b) = (1, 1, 1)
+                    }
+                    self.init(
+                        .sRGB,
+                        red: Double(r) / 255,
+                        green: Double(g) / 255,
+                        blue: Double(b) / 255,
+                        opacity: 1
+                    )
+                }
+            }
