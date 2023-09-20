@@ -13,12 +13,23 @@ struct CameraView: View {
     @Binding var showHexColor: Bool
     @StateObject var cameraViewModel = CameraViewModel()
     @Binding var detectedHexColor: String  // The Binding variable
+    @State private var zoomFactor: CGFloat = 1.0 // Initial zoom factor
     
     var body: some View {
         ZStack {
             CameraPreview(cameraViewModel: cameraViewModel)
                 .ignoresSafeArea()
-            // The large hex color display has been removed
+            
+            VStack {
+                Spacer()
+                if cameraViewModel.minZoomFactor < cameraViewModel.maxZoomFactor {
+                    Slider(value: $zoomFactor, in: cameraViewModel.minZoomFactor...cameraViewModel.maxZoomFactor, step: 0.1)
+                        .padding()
+                        .onChange(of: zoomFactor) { newValue in
+                            cameraViewModel.set(zoom: newValue)
+                        }
+                }
+            }
         }
         .onAppear(perform: cameraViewModel.configureCaptureSession)
         .onAppear {  // Update detectedHexColor when the view appears
@@ -29,6 +40,7 @@ struct CameraView: View {
         }
     }
 }
+
 
 struct CameraPreview: UIViewRepresentable {
     @ObservedObject var cameraViewModel: CameraViewModel

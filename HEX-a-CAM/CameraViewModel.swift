@@ -18,13 +18,24 @@ class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, O
     var lastNColors: [UIColor] = []  // To keep track of the last 'n' colors
     let n = 10  // Number of frames to average over
     
-    var videoDeviceInput: AVCaptureDeviceInput!  // Add this property
+    var videoDeviceInput: AVCaptureDeviceInput!
 
     func configureCaptureSession() {
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             fatalError("No back camera available.")
         }
-        
+
+        func configureCaptureSession() {
+           
+            
+            if let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
+                minZoomFactor = camera.minAvailableVideoZoomFactor
+                maxZoomFactor = camera.maxAvailableVideoZoomFactor
+            }
+            
+            
+        }
+
         do {
             videoDeviceInput = try AVCaptureDeviceInput(device: camera)  // Initialize the property here
             captureSession.addInput(videoDeviceInput)

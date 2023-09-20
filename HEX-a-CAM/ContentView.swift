@@ -6,6 +6,20 @@
 
 import SwiftUI
 
+
+func fireworkHapticEffect() {
+    let generator = UIImpactFeedbackGenerator(style: .heavy)
+    generator.impactOccurred()
+    DispatchQueue.global().async {
+        for _ in 1...5 {
+            usleep(200000)
+            DispatchQueue.main.async {
+                generator.impactOccurred()
+            }
+        }
+    }
+}
+
 struct ColorChangingComponent: View {
     var color: Color
     @State private var rotation: Double = 0
@@ -123,25 +137,26 @@ struct ContentView: View {
             }
             
             if showCaptureButton && showCamera {
-                Button(action: {
-                    withAnimation {
-                        self.isButtonClicked.toggle()
-                    }
-                }) {
-                    if isButtonClicked {
-                        Image(systemName: "checkmark.circle")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(Color.white)
-                    } else {
-                        Image(systemName: "button.programmable")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(Color.white)
-                    }
-                }
-                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 60)
-            }
+                            Button(action: {
+                                fireworkHapticEffect()  // Call the haptic function
+                                withAnimation {
+                                    self.isButtonClicked.toggle()
+                                }
+                            }) {
+                                if isButtonClicked {
+                                    Image(systemName: "checkmark.circle")
+                                        .resizable()
+                                        .frame(width: 60, height: 60)
+                                        .foregroundColor(Color.white)
+                                } else {
+                                    Image(systemName: "button.programmable")
+                                        .resizable()
+                                        .frame(width: 60, height: 60)
+                                        .foregroundColor(Color.white)
+                                }
+                            }
+                            .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)  // Position adjusted to avoid overlap
+                        }
             
             if showPopup {
                 VStack {
