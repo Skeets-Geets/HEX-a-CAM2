@@ -12,17 +12,22 @@ import CoreGraphics
 class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, ObservableObject {
     let captureSession = AVCaptureSession()
     @Published var colorHex: String = "#FFFFFF"
+    var minZoomFactor: CGFloat = 1.0
+    var maxZoomFactor: CGFloat = 1.0
+    var currentZoomFactor: CGFloat = 1.0
     var lastNColors: [UIColor] = []  // To keep track of the last 'n' colors
     let n = 10  // Number of frames to average over
     
+    var videoDeviceInput: AVCaptureDeviceInput!  // Add this property
+
     func configureCaptureSession() {
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             fatalError("No back camera available.")
         }
         
         do {
-            let input = try AVCaptureDeviceInput(device: camera)
-            captureSession.addInput(input)
+            videoDeviceInput = try AVCaptureDeviceInput(device: camera)  // Initialize the property here
+            captureSession.addInput(videoDeviceInput)
             
             let output = AVCaptureVideoDataOutput()
             output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
@@ -35,6 +40,21 @@ class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, O
             print("Error configuring capture session: \(error)")
         }
     }
+    
+    public func set(zoom: CGFloat) {
+        let factor = zoom < 1 ? 1 : zoom
+        let device = self.videoDeviceInput.device
+        
+        do {
+            try device.lockForConfiguration()
+            device.videoZoomFactor = factor
+            device.unlockForConfiguration()
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    
+    
     //logic for my core hex calculator and convertor
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -107,4 +127,6 @@ extension UIImage {
         return UIColor(red: r, green: g, blue: b, alpha: a)
     }
 }
+
+// Add this inside your CameraViewModel.swift
 
