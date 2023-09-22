@@ -20,7 +20,6 @@ func fireworkHapticEffect() {
     }
 }
 
-
 struct Hexagon: Shape {
     func path(in rect: CGRect) -> Path {
         let sides = 6
@@ -44,6 +43,23 @@ struct Hexagon: Shape {
     }
 }
 
+struct CrosshairView: View {
+    var body: some View {
+        ZStack {
+            VStack {
+                Spacer()
+                Rectangle().frame(width: 2, height: 50)
+                Spacer()
+            }
+            HStack {
+                Spacer()
+                Rectangle().frame(width: 50, height: 2)
+                Spacer()
+            }
+        }
+        .foregroundColor(Color.black)
+    }
+}
 
 struct ImageViewWrapper: UIViewRepresentable {
     var imageName: String
@@ -89,8 +105,9 @@ struct ContentView: View {
     @State var showCaptureButton = false
     @State var isButtonClicked = false
     @State var reverseRotation: Bool = false
-    @State var scale: CGFloat = 1.0
-    @State var hexagonScale: CGFloat = 0.1
+    @State var scale: CGFloat = 1.0  // Scale for the shutter component
+    @State var hexagonScale: CGFloat = 0.01  // Initial small scale for the hexagon
+    @State var showHexagon = false
     
     var body: some View {
         ZStack {
@@ -115,102 +132,75 @@ struct ContentView: View {
             }
             
             if showCamera && !showGIF {
-                            ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $scale)
-                                .frame(width: 100 * scale, height: 100 * scale)
-                                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
-                            
-                            if showHexColor {
-                                Text(detectedHexColor)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(Color.white)
-                                    .position(x: UIScreen.main.bounds.width / 2, y: (UIScreen.main.bounds.height / 2) + 60)
-                            }
-                        }
-                        
+                           ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $scale)
+                               .frame(width: 100, height: 100)
+                               .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+                       }
+                       
+                       // Hexagon
             if isButtonClicked {
-                Hexagon()
-                    .fill(Color(hex: detectedHexColor))
-                    .frame(width: 200, height: 200)
-                    .scaleEffect(hexagonScale)
-                    .onAppear() {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.3, blendDuration: 0.3)) {
-                            hexagonScale = 1.0
+                            Hexagon()
+                                .fill(Color(hex: detectedHexColor))
+                                .overlay(Text(detectedHexColor).foregroundColor(.white).bold())
+                                .frame(width: 200, height: 200)
+                                .scaleEffect(hexagonScale)
+                                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
                         }
-                    }
-                    .onDisappear() {
-                        hexagonScale = 0.1
-                    }
-                
-                Text(detectedHexColor)
-                    .font(.system(size: 24))
-                    .foregroundColor(Color.white)
-            }
 
-            if showCaptureButton && showCamera {
-                Button(action: {
-                    withAnimation {
-                        isButtonClicked.toggle()
-                        reverseRotation.toggle()
-                        scale = isButtonClicked ? 0.5 : 1.0
-                        fireworkHapticEffect()
-                        if !isButtonClicked {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.3, blendDuration: 0.3)) {
-                                hexagonScale = 0.1
+                        // Capture Button
+                        if showCaptureButton && showCamera {
+                            Button(action: {
+                                isButtonClicked.toggle()
+                                reverseRotation.toggle()
+                                
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
+                                    hexagonScale = isButtonClicked ? 1 : 0.01
+                                }
+                                
+                                fireworkHapticEffect()
+                                
+                            }) {
+                                Image(systemName: isButtonClicked ? "checkmark.circle" : "button.programmable")
+                                    .resizable()
+                                    .frame(width: 60, height: 60)
+                                    .foregroundColor(isButtonClicked ? Color.green : Color.white)
                             }
+                            .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
                         }
-                    }
-                }) {
-                    Image(systemName: isButtonClicked ? "checkmark.circle" : "button.programmable")
-                        .resizable()
-                        .frame(width: 60, height: 60)
-                        .foregroundColor(isButtonClicked ? Color.green : Color.white)
-                }
-                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
-            }
                     }
                     .onAppear() {
                         self.showGIF = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            withAnimation {
-                                self.showGIF = false
-                                self.showCamera = true
-                                self.expandCamera = true
-                            }
-                            self.showHexColor = true
-                            self.showCaptureButton = true
-                        }
                     }
                 }
             }
-
-            struct ColorChangingComponent: View {
-                var color: Color
-                @Binding var reverseRotation: Bool
-                @Binding var scale: CGFloat
-                @State private var rotation: Double = 0
-                
-                var body: some View {
-                    Image("shutterwhite")
-                        .resizable()
-                        .scaledToFit()
-                        .colorMultiply(color)
-                        .rotationEffect(.degrees(reverseRotation ? -rotation : rotation))
-                        .scaleEffect(scale)
-                        .onAppear() {
-                            withAnimation(Animation.linear(duration: 10).repeatForever(autoreverses: false)) {
-                                rotation = 360
-                            }
-                        }
-                        .onChange(of: reverseRotation) { newValue in
-                            withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
-                                rotation = newValue ? -360 : 360
-                            }
-                        }
+struct ColorChangingComponent: View {
+    var color: Color
+    @Binding var reverseRotation: Bool
+    @Binding var scale: CGFloat
+    @State private var rotation: Double = 0
+    
+    var body: some View {
+        Image("shutterwhite")
+            .resizable()
+            .scaledToFit()
+            .colorMultiply(color)
+            .rotationEffect(.degrees(reverseRotation && scale != 1 ? -rotation : rotation))
+            .scaleEffect(scale)
+            .onAppear() {
+                withAnimation(Animation.linear(duration: 10).repeatForever(autoreverses: false)) {
+                    rotation = 360
                 }
             }
+            .onChange(of: reverseRotation) { newValue in
+                withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
+                    rotation = newValue && scale != 1 ? -360 : 360
+                }
+            }
+    }
+}
 
-            extension Color {
-                init(hex: String) {
+extension Color {
+    init(hex: String) {
                     let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
                     var int: UInt64 = 0
                     Scanner(string: hex).scanHexInt64(&int)
