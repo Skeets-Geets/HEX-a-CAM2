@@ -5,8 +5,6 @@
 //  Created by GEET on 9/3/23.
 //
 
-// Item.swift
-
 import Foundation
 import CoreData
 
