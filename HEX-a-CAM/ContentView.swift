@@ -43,24 +43,6 @@ struct Hexagon: Shape {
     }
 }
 
-struct CrosshairView: View {
-    var body: some View {
-        ZStack {
-            VStack {
-                Spacer()
-                Rectangle().frame(width: 2, height: 50)
-                Spacer()
-            }
-            HStack {
-                Spacer()
-                Rectangle().frame(width: 50, height: 2)
-                Spacer()
-            }
-        }
-        .foregroundColor(Color.black)
-    }
-}
-
 struct ImageViewWrapper: UIViewRepresentable {
     var imageName: String
     var completion: ((Double) -> Void)?
@@ -108,6 +90,7 @@ struct ContentView: View {
     @State var scale: CGFloat = 1.0  // Scale for the shutter component
     @State var hexagonScale: CGFloat = 0.01  // Initial small scale for the hexagon
     @State var showHexagon = false
+    @State var shutterScale: CGFloat = 1.0
     
     var body: some View {
         ZStack {
@@ -132,10 +115,10 @@ struct ContentView: View {
             }
             
             if showCamera && !showGIF {
-                           ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $scale)
-                               .frame(width: 100, height: 100)
-                               .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
-                       }
+                ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $shutterScale)  // Use shutterScale here
+                    .frame(width: 100, height: 100)
+                    .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+            }
                        
                        // Hexagon
             if isButtonClicked {
@@ -148,13 +131,14 @@ struct ContentView: View {
                         }
 
                         // Capture Button
-                        if showCaptureButton && showCamera {
+            if showCaptureButton && showCamera {
                             Button(action: {
                                 isButtonClicked.toggle()
                                 reverseRotation.toggle()
                                 
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
                                     hexagonScale = isButtonClicked ? 1 : 0.01
+                                    shutterScale = isButtonClicked ? 0.1 : 1.0  // Toggle the shutter scale
                                 }
                                 
                                 fireworkHapticEffect()
@@ -178,26 +162,31 @@ struct ColorChangingComponent: View {
     @Binding var reverseRotation: Bool
     @Binding var scale: CGFloat
     @State private var rotation: Double = 0
+    @State private var targetRotation: Double = 360
     
     var body: some View {
         Image("shutterwhite")
             .resizable()
             .scaledToFit()
             .colorMultiply(color)
-            .rotationEffect(.degrees(reverseRotation && scale != 1 ? -rotation : rotation))
+            .rotationEffect(.degrees(rotation))
             .scaleEffect(scale)
             .onAppear() {
-                withAnimation(Animation.linear(duration: 10).repeatForever(autoreverses: false)) {
-                    rotation = 360
-                }
+                startRotation()
             }
-            .onChange(of: reverseRotation) { newValue in
-                withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
-                    rotation = newValue && scale != 1 ? -360 : 360
-                }
+            .onChange(of: reverseRotation) { _ in
+                targetRotation = rotation + (reverseRotation ? -360 : 360)
+                startRotation()
             }
     }
+    
+    private func startRotation() {
+        withAnimation(Animation.linear(duration: 10).repeatForever(autoreverses: false)) {
+            rotation = targetRotation
+        }
+    }
 }
+
 
 extension Color {
     init(hex: String) {
