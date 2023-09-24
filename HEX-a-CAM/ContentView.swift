@@ -78,6 +78,18 @@ struct ImageViewWrapper: UIViewRepresentable {
     }
 }
 
+struct VisualEffectView: UIViewRepresentable {
+    var effect: UIVisualEffect?
+    
+    func makeUIView(context: UIViewRepresentableContext<Self>) -> UIVisualEffectView {
+        UIVisualEffectView()
+    }
+    
+    func updateUIView(_ uiView: UIVisualEffectView, context: UIViewRepresentableContext<Self>) {
+        uiView.effect = effect
+    }
+}
+
 struct ContentView: View {
     @State var expandCamera = false
     @State var showHexColor = false
@@ -122,12 +134,22 @@ struct ContentView: View {
                        
                        // Hexagon
             if isButtonClicked {
-                Hexagon()
-                    .fill(Color(hex: detectedHexColor))
-                    .overlay(Text(detectedHexColor).foregroundColor(.white).bold())
-                    .frame(width: 350, height: 350)  // Increase the size here
-                    .scaleEffect(hexagonScale)
-                    .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
+                ZStack {
+                    VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                        .frame(width: 400, height: 400)
+                        .clipShape(Hexagon())
+                        .scaleEffect(hexagonScale)  // Add this line to animate the transparent hexagon
+                        
+                    Hexagon()
+                        .stroke(Color(hex: detectedHexColor), lineWidth: 5)
+                        .frame(width: 400, height: 400)
+                        .scaleEffect(hexagonScale)
+                    
+                    Text(detectedHexColor)
+                        .foregroundColor(.white)
+                        .bold()
+                }
+                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
             }
 
                         // Capture Button
