@@ -5,174 +5,89 @@
 //  Created by GEET on 9/3/23.
 
 import SwiftUI
+import AVFoundation
+import UIKit
 
-struct ColorChangingComponent: View {
-    var color: Color
-    @State private var rotation: Double = 0
+struct CameraView: View {
+    @Binding var expandCamera: Bool
+    @Binding var showHexColor: Bool
+    @StateObject var cameraViewModel = CameraViewModel()
+    @Binding var detectedHexColor: String  // The Binding variable
+    @State private var zoomFactor: CGFloat = 1.0 // Initial zoom factor
     
     var body: some View {
-        Image("shutterwhite")
-            .resizable()
-            .scaledToFit()
-            .colorMultiply(color)
-            .rotationEffect(.degrees(rotation))
-            .onAppear() {
-                withAnimation(Animation.linear(duration: 10).repeatForever(autoreverses: false)) {
-                    rotation = 360
-                }
-            }
-    }
-}
-
-struct CrosshairView: View {
-    var body: some View {
         ZStack {
+            CameraPreview(cameraViewModel: cameraViewModel)
+                .ignoresSafeArea()
+            
             VStack {
                 Spacer()
-                Rectangle().frame(width: 2, height: 50)
-                Spacer()
-            }
-            HStack {
-                Spacer()
-                Rectangle().frame(width: 50, height: 2)
-                Spacer()
+                if cameraViewModel.minZoomFactor < cameraViewModel.maxZoomFactor {
+                    Slider(value: $zoomFactor, in: cameraViewModel.minZoomFactor...cameraViewModel.maxZoomFactor, step: 0.1)
+                        .padding()
+                        .onChange(of: zoomFactor) { newValue in
+                            cameraViewModel.set(zoom: newValue)
+                        }
+                }
             }
         }
-        .foregroundColor(Color.black)
+        .onAppear(perform: cameraViewModel.configureCaptureSession)
+        .onAppear {  // Update detectedHexColor when the view appears
+            self.detectedHexColor = cameraViewModel.colorHex
+        }
+        .onChange(of: cameraViewModel.colorHex) { newValue in
+            self.detectedHexColor = newValue
+        }
     }
 }
 
-struct ImageViewWrapper: UIViewRepresentable {
-    var imageName: String
-    var completion: ((Double) -> Void)?
+
+struct CameraPreview: UIViewRepresentable {
+    @ObservedObject var cameraViewModel: CameraViewModel
     
-    func makeUIView(context: Context) -> UIImageView {
-        let imageView = UIImageView()
-        imageView.loadGif(name: imageName) { duration in
-            completion?(duration)
-        }
-        return imageView
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: UIScreen.main.bounds)
+        
+        let previewLayer = AVCaptureVideoPreviewLayer(session: cameraViewModel.captureSession)
+        previewLayer.frame = view.frame
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
+        
+        // Add pinch gesture recognizer
+        let pinchGesture = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(context.coordinator.handlePinch))
+        view.addGestureRecognizer(pinchGesture)
+        
+        return view
     }
-
-    func updateUIView(_ uiView: UIImageView, context: Context) {
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // No need to update
     }
-
+    
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(self, cameraViewModel: cameraViewModel)
     }
-
+    
     class Coordinator: NSObject {
-        var parent: ImageViewWrapper
-        init(_ parent: ImageViewWrapper) {
-            self.parent = parent
+        var view: CameraPreview
+        var cameraViewModel: CameraViewModel
+        
+        init(_ view: CameraPreview, cameraViewModel: CameraViewModel) {
+            self.view = view
+            self.cameraViewModel = cameraViewModel
         }
         
-        @objc func handleHapticFeedback() {
-            let generator = UINotificationFeedbackGenerator()
-            for _ in 1...6 {
-                generator.notificationOccurred(.success)
-                usleep(200000)
+        @objc func handlePinch(_ pinch: UIPinchGestureRecognizer) {
+            switch pinch.state {
+            case .began:
+                pinch.scale = cameraViewModel.currentZoomFactor
+            case .changed:
+                let scale = pinch.scale
+                cameraViewModel.set(zoom: scale)
+            default:
+                break
             }
         }
-    }
-}
-
-struct ContentView: View {
-    @State var expandCamera = false
-    @State var showHexColor = false
-    @State var showGIF = true
-    @State var detectedHexColor: String = "#FFFFFF"
-    @State var showCamera = false
-    @State var showPopup = false
-    @State var showCaptureButton = false
-    @State var isButtonClicked = false  // New state variable for button toggle
-
-    var body: some View {
-        ZStack {
-            if showCamera {
-                CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
-                    .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-                    .animation(Animation.easeInOut(duration: 4), value: expandCamera)
-            }
-            
-            if showGIF {
-                ImageViewWrapper(imageName: "launch") { _ in
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                        withAnimation {
-                            self.showGIF = false
-                            self.showCamera = true
-                            self.expandCamera = true
-                        }
-                        self.showHexColor = true
-                        self.showCaptureButton = true
-                    }
-                }
-            }
-            
-            if showCamera && !showGIF {
-                ColorChangingComponent(color: Color(hex: detectedHexColor))
-                    .frame(width: 100, height: 100)
-                    .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
-            }
-            
-            if showCaptureButton && showCamera {
-                Button(action: {
-                    withAnimation {
-                        self.isButtonClicked.toggle()
-                    }
-                }) {
-                    if isButtonClicked {
-                        Image(systemName: "checkmark.circle")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(Color.white)
-                    } else {
-                        Image(systemName: "button.programmable")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(Color.white)
-                    }
-                }
-                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 60)
-            }
-            
-            if showPopup {
-                VStack {
-                    Text("Color Name")
-                    Text(detectedHexColor)
-                        .bold()
-                }
-                .frame(width: 200, height: 100)
-                .background(Color.white)
-                .cornerRadius(10)
-                .shadow(radius: 10)
-            }
-        }
-        .onAppear() {
-            self.showGIF = true
-        }
-    }
-}
-
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let r, g, b: UInt64
-        switch hex.count {
-        case 6:
-            (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (r, g, b) = (1, 1, 1)
-        }
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: 1
-        )
     }
 }
 
