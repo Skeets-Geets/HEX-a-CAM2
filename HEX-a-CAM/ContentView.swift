@@ -7,6 +7,70 @@
 
 import SwiftUI
 
+struct ColorChangingComponent: View {
+    var color: Color
+    @Binding var reverseRotation: Bool
+    @Binding var scale: CGFloat
+    @State private var rotation: Double = 0
+    @State private var targetRotation: Double = 360
+
+    var body: some View {
+        Image("shutterwhitenew")
+            .resizable()
+            .scaledToFit()
+            .colorMultiply(color)
+            .rotationEffect(.degrees(rotation))
+            .scaleEffect(scale)
+            .onAppear() {
+                startRotation()
+            }
+            .onChange(of: reverseRotation){
+                targetRotation = rotation + (reverseRotation ? -360 : 360)
+                startRotation()
+            }
+    }
+
+    private func startRotation() {
+        withAnimation(Animation.linear(duration: 3).repeatForever(autoreverses: false)) {
+            rotation = targetRotation
+        }
+    }
+}
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r, g, b: UInt64
+        switch hex.count {
+        case 6:
+            (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (r, g, b) = (1, 1, 1)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: 1
+        )
+    }
+}
+
+struct VisualEffectView: UIViewRepresentable {
+    var effect: UIVisualEffect?
+    
+    func makeUIView(context: UIViewRepresentableContext<Self>) -> UIVisualEffectView {
+        UIVisualEffectView()
+    }
+    
+    func updateUIView(_ uiView: UIVisualEffectView, context: UIViewRepresentableContext<Self>) {
+        uiView.effect = effect
+    }
+}
+
 func fireworkHapticEffect() {
     let generator = UIImpactFeedbackGenerator(style: .heavy)
     generator.impactOccurred()
@@ -78,18 +142,6 @@ struct ImageViewWrapper: UIViewRepresentable {
     }
 }
 
-struct VisualEffectView: UIViewRepresentable {
-    var effect: UIVisualEffect?
-    
-    func makeUIView(context: UIViewRepresentableContext<Self>) -> UIVisualEffectView {
-        UIVisualEffectView()
-    }
-    
-    func updateUIView(_ uiView: UIVisualEffectView, context: UIViewRepresentableContext<Self>) {
-        uiView.effect = effect
-    }
-}
-
 struct ContentView: View {
     @State var expandCamera = false
     @State var showHexColor = false
@@ -103,15 +155,51 @@ struct ContentView: View {
     @State var hexagonScale: CGFloat = 0.01  // Initial small scale for the hexagon
     @State var showHexagon = false
     @State var shutterScale: CGFloat = 1.0
+    @State var colorName: String = ""
+    @State var button1Offset: CGFloat = 300
+    @State var button2Offset: CGFloat = 300
+    
+    func animateButtonsIn() {
+        // Your existing animateButtonsIn code
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation {
+                button1Offset = 0
+            }
+            
+            
+            // New function to animate buttons out
+            func animateButtonsOut() {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
+                    button1Offset = 300
+                    button2Offset = 300
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation {
+                    button2Offset = 0
+                }
+            }
+        }
+    }
+    
+    func animateButtons() {
+        if isButtonClicked {
+            animateButtonsIn()
+        } else {
+            animateButtonsOut()
+        }
+    }
     
     var body: some View {
         ZStack {
+#if !DEBUG
             if showCamera {
                 CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
                     .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
                     .animation(Animation.easeInOut(duration: 4), value: expandCamera)
             }
-            
+#endif
             if showGIF {
                 ImageViewWrapper(imageName: "launch") { _ in
                     DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -127,107 +215,130 @@ struct ContentView: View {
             }
             
             if showCamera && !showGIF {
-                ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $shutterScale)  // Use shutterScale here
+                ColorChangingComponent(color: Color(hex: detectedHexColor), reverseRotation: $reverseRotation, scale: $shutterScale)
                     .frame(width: 100, height: 100)
                     .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
             }
-                       
-                       // Hexagon
+            
+            // Hexagon
             if isButtonClicked {
                 ZStack {
                     VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                        .frame(width: 400, height: 400)
+                        .frame(width: 300, height: 300)
                         .clipShape(Hexagon())
-                        .scaleEffect(hexagonScale)  // Add this line to animate the transparent hexagon
-                        
+                        .scaleEffect(hexagonScale)
+                    
                     Hexagon()
                         .stroke(Color(hex: detectedHexColor), lineWidth: 5)
-                        .frame(width: 400, height: 400)
+                        .frame(width: 300, height: 300)
                         .scaleEffect(hexagonScale)
                     
                     Text(detectedHexColor)
                         .foregroundColor(.white)
                         .bold()
                 }
-                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2)
-            }
-
-                        // Capture Button
-            if showCaptureButton && showCamera {
-                            Button(action: {
-                                isButtonClicked.toggle()
-                                reverseRotation.toggle()
-                                
-                                withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
-                                    hexagonScale = isButtonClicked ? 1 : 0.01
-                                    shutterScale = isButtonClicked ? 0.1 : 1.0  // Toggle the shutter scale
-                                }
-                                
-                                fireworkHapticEffect()
-                                
-                            }) {
-                                Image(systemName: isButtonClicked ? "checkmark.circle" : "button.programmable")
-                                    .resizable()
-                                    .frame(width: 60, height: 60)
-                                    .foregroundColor(isButtonClicked ? Color.green : Color.white)
-                            }
-                            .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
-                        }
-                    }
-                    .onAppear() {
-                        self.showGIF = true
-                    }
+                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2 - 50)
+                .onAppear {
+                    self.animateButtonsIn()
                 }
+                .onDisappear {
+                    self.animateButtonsOut()
+                }
+                
+                // Capture Button
+                if showCaptureButton && showCamera {
+                    Button(action: {
+                        isButtonClicked.toggle()
+                        reverseRotation.toggle()
+                        
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
+                            hexagonScale = isButtonClicked ? 1 : 0.01
+                            shutterScale = isButtonClicked ? 0.1 : 1.0
+                        }
+                        
+                        fireworkHapticEffect()
+                        
+                        fetchColorInfo(hex: detectedHexColor) { info in
+                            if let info = info {
+                                DispatchQueue.main.async {
+                                    self.colorName = info.name["value"] ?? "Unknown"
+                                }
+                            }
+                        }
+                        
+                        if isButtonClicked {
+                            self.animateButtonsIn()
+                        } else {
+                            self.animateButtonsOut()
+                        }
+                        
+                    }) {
+                        Image(systemName: isButtonClicked ? "chevron.backward.circle.fill" : "button.programmable")
+                            .resizable()
+                            .frame(width: 60, height: 60)
+                            .foregroundColor(isButtonClicked ? Color.green : Color.white)
+                    }
+                    .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 100)
+                }
+                
+                VStack(spacing: 15) {
+                    // Button 1
+                    Button(action: {
+                        // Your button 1 action
+                    }) {
+                        Text("Save Color")
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 5)
+                            .font(.system(size: 18, weight: .thin, design: .default))
+                    }
+                    .background(VisualEffectView(effect: UIBlurEffect(style: .dark)))
+                    .cornerRadius(20)
+                    .offset(y: button1Offset)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1))
+                    
+                    // Button 2
+                    Button(action: {
+                        // Your button 2 action
+                    }) {
+                        Text("My Colors")
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 15)
+                            .padding(.vertical, 5)
+                            .font(.system(size: 18, weight: .thin, design: .default))
+                    }
+                    .background(VisualEffectView(effect: UIBlurEffect(style: .dark)))
+                    .cornerRadius(40)
+                    .offset(y: button2Offset)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1))
+                }
+                .position(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height - 250)
             }
-struct ColorChangingComponent: View {
-    var color: Color
-    @Binding var reverseRotation: Bool
-    @Binding var scale: CGFloat
-    @State private var rotation: Double = 0
-    @State private var targetRotation: Double = 360
-    
-    var body: some View {
-        Image("shutterwhite")
-            .resizable()
-            .scaledToFit()
-            .colorMultiply(color)
-            .rotationEffect(.degrees(rotation))
-            .scaleEffect(scale)
-            .onAppear() {
-                startRotation()
-            }
-            .onChange(of: reverseRotation) { _ in
-                targetRotation = rotation + (reverseRotation ? -360 : 360)
-                startRotation()
-            }
+        }
+        .onAppear() {
+            self.showGIF = true
+        }
     }
     
-    private func startRotation() {
-        withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {  // Reduced duration to 5 seconds
-            rotation = targetRotation
+    // Adding the missing animateButtonsOut function
+    func animateButtonsOut() {
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
+            button1Offset = 300
+            button2Offset = 300
+        }
+    }
+    
+    struct ContentView_Previews: PreviewProvider {
+        static var previews: some View {
+            Group {
+                ContentView()
+                    .previewDevice("iPhone 12")
+                ContentView()
+                    .previewDevice("iPhone SE (2nd generation)")
+            }
         }
     }
 }
 
 
-extension Color {
-    init(hex: String) {
-                    let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-                    var int: UInt64 = 0
-                    Scanner(string: hex).scanHexInt64(&int)
-                    let r, g, b: UInt64
-                    switch hex.count {
-                    case 6:
-                        (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
-                    default:
-                        (r, g, b) = (1, 1, 1)
-                    }
-                    self.init(
-                        .sRGB,
-                        red: Double(r) / 255,
-                        green: Double(g) / 255,
-                        blue: Double(b) / 255,
-                        opacity: 1
-                    )
-                }
-            }
+

@@ -23,8 +23,10 @@
 		525833032AA472D400C19485 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525833022AA472D400C19485 /* ViewController.swift */; };
 		525833052AA4736D00C19485 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525833042AA4736D00C19485 /* Persistence.swift */; };
 		525833072AA4830800C19485 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525833062AA4830800C19485 /* Item.swift */; };
+		525E479F2AC180EE00DDFAD6 /* shutterwhitenew.png in Resources */ = {isa = PBXBuildFile; fileRef = 525E479E2AC180EE00DDFAD6 /* shutterwhitenew.png */; };
 		5277B3272AB19E0400398197 /* launch.gif in Resources */ = {isa = PBXBuildFile; fileRef = 5277B3262AB19E0400398197 /* launch.gif */; };
 		527ED24E2AAABBB60062216A /* petals.gif in Resources */ = {isa = PBXBuildFile; fileRef = 527ED24D2AAABBB60062216A /* petals.gif */; };
+		529E42792AC0C73B00865F10 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529E42782AC0C73B00865F10 /* APIManager.swift */; };
 		529E4A4E2AA94B0200BC7F40 /* GIFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529E4A4D2AA94B0200BC7F40 /* GIFView.swift */; };
 		52B309842AABA90E00AD1DF0 /* shuddergrad.gif in Resources */ = {isa = PBXBuildFile; fileRef = 52B309832AABA90E00AD1DF0 /* shuddergrad.gif */; };
 		52BDC1CB2AB123A20064B859 /* UIImage+GIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BDC1CA2AB123A20064B859 /* UIImage+GIF.swift */; };
@@ -68,8 +70,10 @@
 		525833042AA4736D00C19485 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		525833062AA4830800C19485 /* Item.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
 		525833082AA493AE00C19485 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		525E479E2AC180EE00DDFAD6 /* shutterwhitenew.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = shutterwhitenew.png; sourceTree = "<group>"; };
 		5277B3262AB19E0400398197 /* launch.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = launch.gif; sourceTree = "<group>"; };
 		527ED24D2AAABBB60062216A /* petals.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = petals.gif; sourceTree = "<group>"; };
+		529E42782AC0C73B00865F10 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
 		529E4A4D2AA94B0200BC7F40 /* GIFView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GIFView.swift; sourceTree = "<group>"; };
 		52B309832AABA90E00AD1DF0 /* shuddergrad.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = shuddergrad.gif; sourceTree = "<group>"; };
 		52BDC1CA2AB123A20064B859 /* UIImage+GIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+GIF.swift"; sourceTree = "<group>"; };
@@ -132,7 +136,9 @@
 				525833002AA4723E00C19485 /* CameraController.swift */,
 				52BDC1CA2AB123A20064B859 /* UIImage+GIF.swift */,
 				525833062AA4830800C19485 /* Item.swift */,
+				529E42782AC0C73B00865F10 /* APIManager.swift */,
 				525832D62AA470A100C19485 /* Assets.xcassets */,
+				525E479E2AC180EE00DDFAD6 /* shutterwhitenew.png */,
 				52161E402AADFAB0008CD8C3 /* shutterwhite.png */,
 				52161E3E2AADFAAA008CD8C3 /* shuttergray.png */,
 				527ED24D2AAABBB60062216A /* petals.gif */,
@@ -280,6 +286,7 @@
 				527ED24E2AAABBB60062216A /* petals.gif in Resources */,
 				52161E412AADFAB0008CD8C3 /* shutterwhite.png in Resources */,
 				52B309842AABA90E00AD1DF0 /* shuddergrad.gif in Resources */,
+				525E479F2AC180EE00DDFAD6 /* shutterwhitenew.png in Resources */,
 				5277B3272AB19E0400398197 /* launch.gif in Resources */,
 				52161E3F2AADFAAA008CD8C3 /* shuttergray.png in Resources */,
 			);
@@ -306,6 +313,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				529E42792AC0C73B00865F10 /* APIManager.swift in Sources */,
 				525833032AA472D400C19485 /* ViewController.swift in Sources */,
 				529E4A4E2AA94B0200BC7F40 /* GIFView.swift in Sources */,
 				525832D32AA4709F00C19485 /* ContentView.swift in Sources */,
