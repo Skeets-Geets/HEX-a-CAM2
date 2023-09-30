@@ -26,7 +26,8 @@
 		525E479F2AC180EE00DDFAD6 /* shutterwhitenew.png in Resources */ = {isa = PBXBuildFile; fileRef = 525E479E2AC180EE00DDFAD6 /* shutterwhitenew.png */; };
 		5277B3272AB19E0400398197 /* launch.gif in Resources */ = {isa = PBXBuildFile; fileRef = 5277B3262AB19E0400398197 /* launch.gif */; };
 		527ED24E2AAABBB60062216A /* petals.gif in Resources */ = {isa = PBXBuildFile; fileRef = 527ED24D2AAABBB60062216A /* petals.gif */; };
-		529E42792AC0C73B00865F10 /* APIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529E42782AC0C73B00865F10 /* APIManager.swift */; };
+		52928A5A2AC798BA00055F77 /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52928A592AC798BA00055F77 /* NetworkManager.swift */; };
+		52928A5C2AC7997B00055F77 /* ColorDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52928A5B2AC7997B00055F77 /* ColorDisplayView.swift */; };
 		529E4A4E2AA94B0200BC7F40 /* GIFView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529E4A4D2AA94B0200BC7F40 /* GIFView.swift */; };
 		52B309842AABA90E00AD1DF0 /* shuddergrad.gif in Resources */ = {isa = PBXBuildFile; fileRef = 52B309832AABA90E00AD1DF0 /* shuddergrad.gif */; };
 		52BDC1CB2AB123A20064B859 /* UIImage+GIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52BDC1CA2AB123A20064B859 /* UIImage+GIF.swift */; };
@@ -55,7 +56,7 @@
 		52161E402AADFAB0008CD8C3 /* shutterwhite.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = shutterwhite.png; sourceTree = "<group>"; };
 		525832CD2AA4709F00C19485 /* HEX-a-CAM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "HEX-a-CAM.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		525832D02AA4709F00C19485 /* HEX_a_CAMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HEX_a_CAMApp.swift; sourceTree = "<group>"; };
-		525832D22AA4709F00C19485 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		525832D22AA4709F00C19485 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; wrapsLines = 1; };
 		525832D62AA470A100C19485 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		525832D92AA470A100C19485 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		525832DF2AA470A100C19485 /* HEX-a-CAMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "HEX-a-CAMTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,7 +74,8 @@
 		525E479E2AC180EE00DDFAD6 /* shutterwhitenew.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = shutterwhitenew.png; sourceTree = "<group>"; };
 		5277B3262AB19E0400398197 /* launch.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = launch.gif; sourceTree = "<group>"; };
 		527ED24D2AAABBB60062216A /* petals.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = petals.gif; sourceTree = "<group>"; };
-		529E42782AC0C73B00865F10 /* APIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIManager.swift; sourceTree = "<group>"; };
+		52928A592AC798BA00055F77 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		52928A5B2AC7997B00055F77 /* ColorDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorDisplayView.swift; sourceTree = "<group>"; };
 		529E4A4D2AA94B0200BC7F40 /* GIFView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GIFView.swift; sourceTree = "<group>"; };
 		52B309832AABA90E00AD1DF0 /* shuddergrad.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = shuddergrad.gif; sourceTree = "<group>"; };
 		52BDC1CA2AB123A20064B859 /* UIImage+GIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+GIF.swift"; sourceTree = "<group>"; };
@@ -136,7 +138,8 @@
 				525833002AA4723E00C19485 /* CameraController.swift */,
 				52BDC1CA2AB123A20064B859 /* UIImage+GIF.swift */,
 				525833062AA4830800C19485 /* Item.swift */,
-				529E42782AC0C73B00865F10 /* APIManager.swift */,
+				52928A592AC798BA00055F77 /* NetworkManager.swift */,
+				52928A5B2AC7997B00055F77 /* ColorDisplayView.swift */,
 				525832D62AA470A100C19485 /* Assets.xcassets */,
 				525E479E2AC180EE00DDFAD6 /* shutterwhitenew.png */,
 				52161E402AADFAB0008CD8C3 /* shutterwhite.png */,
@@ -313,9 +316,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				529E42792AC0C73B00865F10 /* APIManager.swift in Sources */,
 				525833032AA472D400C19485 /* ViewController.swift in Sources */,
 				529E4A4E2AA94B0200BC7F40 /* GIFView.swift in Sources */,
+				52928A5C2AC7997B00055F77 /* ColorDisplayView.swift in Sources */,
+				52928A5A2AC798BA00055F77 /* NetworkManager.swift in Sources */,
 				525832D32AA4709F00C19485 /* ContentView.swift in Sources */,
 				525832FF2AA471F800C19485 /* CameraViewModel.swift in Sources */,
 				525833052AA4736D00C19485 /* Persistence.swift in Sources */,
@@ -485,6 +489,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"HEX-a-CAM/Preview Content\"";
@@ -507,6 +512,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "EthanMackey.HEX-a-CAM";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -518,6 +524,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"HEX-a-CAM/Preview Content\"";
@@ -540,6 +547,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "EthanMackey.HEX-a-CAM";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

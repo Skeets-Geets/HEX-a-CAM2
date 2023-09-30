@@ -25,9 +25,10 @@ struct CameraView: View {
                 if cameraViewModel.minZoomFactor < cameraViewModel.maxZoomFactor {
                     Slider(value: $zoomFactor, in: cameraViewModel.minZoomFactor...cameraViewModel.maxZoomFactor, step: 0.1)
                         .padding()
-                        .onChange(of: zoomFactor) { newValue in
-                            cameraViewModel.set(zoom: newValue)
+                        .onChange(of: zoomFactor) {
+                            cameraViewModel.set(zoom: zoomFactor)
                         }
+
                 }
             }
         }
@@ -35,11 +36,13 @@ struct CameraView: View {
         .onAppear {  // Update detectedHexColor when the view appears
             self.detectedHexColor = cameraViewModel.colorHex
         }
-        .onChange(of: cameraViewModel.colorHex) { newValue in
-            self.detectedHexColor = newValue
+        .onChange(of: cameraViewModel.colorHex) {
+            self.detectedHexColor = cameraViewModel.colorHex
         }
+
     }
 }
+
 
 
 struct CameraPreview: UIViewRepresentable {
