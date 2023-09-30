@@ -25,13 +25,14 @@ struct ColorDisplayView: View {
             }
             Text(networkManager.colorName)
                 .bold()
-                .font(.title)
-                .padding(.top, 10)
-                .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
+                .font(.system(size: 35, weight: .semibold, design: .default))
+                .padding(.top, 40)
+                .kerning(2.0)
             Text(detectedHexColor)
                 .bold()
-                .font(.headline)
-                .padding(.top, 10)
+                .font(.system(size: 22, weight: .thin, design: .default))
+                .padding(.top, 25)  // Increased padding value to move text further down
+                .kerning(2.0)
         }
         .onAppear {
             networkManager.fetchColorInfo(hex: detectedHexColor)
