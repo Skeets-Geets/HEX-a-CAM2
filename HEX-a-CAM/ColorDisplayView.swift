@@ -5,23 +5,43 @@
 //  Created by GEET on 9/29/23.
 //
 
-import Foundation
-
-
 import SwiftUI
 
+// Define the StrokedButton outside of ColorDisplayView
+struct StrokedButton: View {
+    var title: String
+    var action: () -> Void
+    var strokeColor: Color
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                    .frame(width: 145, height: 30)
+                    .cornerRadius(30)
+                Text(title)
+                    .foregroundColor(.primary)
+                    .bold()
+                    .kerning(2.0)
+            }
+            .overlay(RoundedRectangle(cornerRadius: 30)
+                        .stroke(strokeColor, lineWidth: 2))
+        }
+    }
+}
+
+// Your existing ColorDisplayView with the new StrokedButton instances added
 struct ColorDisplayView: View {
     @ObservedObject var networkManager: NetworkManager
-    @State private var buttonOffset: CGFloat = 0
     var detectedHexColor: String
-
+    var strokeColor: Color
+    
     var body: some View {
         VStack {
             if let colorImage = networkManager.colorImage {
                 Image(uiImage: colorImage)
                     .resizable()
                     .frame(width: 100, height: 100)
-                
             }
             Text(networkManager.colorName)
                 .bold()
@@ -39,3 +59,4 @@ struct ColorDisplayView: View {
         }
     }
 }
+

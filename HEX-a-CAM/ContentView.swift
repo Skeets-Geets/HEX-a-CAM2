@@ -135,17 +135,17 @@ struct ContentView: View {
     @State var saveButtonOpacity: Double = 0
     @State private var captureButtonScale: CGFloat = 1.0
     @StateObject var networkManager = NetworkManager()
-    
+    @State var capturedColor: Color = Color.white  // Default to white
+    @State var capturedHexCode: String = "#FFFFFF"  // Default value
+
     var body: some View {
         GeometryReader{ geometry in
             ZStack {
-                #if !DEBUG
                 if showCamera {
                     CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .animation(Animation.easeInOut(duration: 4), value: expandCamera)
                 }
-                #endif
                 if showGIF {
                     ImageViewWrapper(imageName: "launch") { _ in
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -177,23 +177,28 @@ struct ContentView: View {
                         // your button action here
                     }) {
                         ZStack {
-                            VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                                .frame(width: 145, height: 30)
-                                .cornerRadius(30)
-                            Text("My Colors")
-                                .foregroundColor(.primary)
-                                .bold()
-                                .kerning(2.0)
-                        }
-                    }
+                                    VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                                        .frame(width: 145, height: 30)
+                                        .cornerRadius(30)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 30)
+                                                .stroke(Color(hex: capturedHexCode), lineWidth: 2)
+                                        )
+                                    Text("My Colors")
+                                        .foregroundColor(.primary)
+                                        .bold()
+                                        .kerning(2.0)
+                                }
+                            }
                     .offset(y: self.buttonOffset - 30)
-                    .opacity(buttonOpacity)
-                    .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
-                    .onAppear {
-                        animateButtonToFinalPosition()
+                        .opacity(buttonOpacity)
+                        .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
+                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
+                        .onAppear {
+                            animateButtonToFinalPosition()
                     }
                 }
+                //BUTTON 2 SAVE COLOR
                 //BUTTON 2 SAVE COLOR
                 if isButtonClicked {
                     Button(action: {
@@ -203,28 +208,30 @@ struct ContentView: View {
                             VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
                                 .frame(width: 120, height: 30)
                                 .cornerRadius(30)
-                                .opacity(self.saveButtonOpacity)
-                            
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 30)
+                                        .stroke(Color(hex: capturedHexCode), lineWidth: 2)
+                                )
                             Text("Save Color")
                                 .foregroundColor(.white)
                                 .bold()
                         }
                     }
-                    .offset(y: self.saveButtonOffset + geometry.size.height * 0.15 - 10)
-                    .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: saveButtonOffset)
-                    .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0), value: saveButtonOpacity)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset + 120)  // Updated position
+                        .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.4), value: buttonOffset)  // Ensure animation is correct
                 }
-                
-                
+
                 
                 // Hexagon
                 if isButtonClicked {
                     AnimatedHexagon(
-                        color: Color(hex: detectedHexColor),
+                        color: isButtonClicked ? Color(hex: capturedHexCode) : Color(hex: detectedHexColor),
                         strokeWidth: strokeWidth,
                         hexagonScale: hexagonScale
                     )
-                    ColorDisplayView(networkManager: networkManager, detectedHexColor: detectedHexColor)
+
+                    // For displaying the hex code value:
+                    ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
                         .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
 
                 }
@@ -235,6 +242,7 @@ struct ContentView: View {
                     Button(action: {
                         isButtonClicked.toggle()
                         reverseRotation.toggle()
+                        capturedHexCode = detectedHexColor  // Update capturedHexCode here
                         
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
                             hexagonScale = isButtonClicked ? 1 : 0.01
