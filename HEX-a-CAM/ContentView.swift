@@ -7,13 +7,16 @@
 
 
 import SwiftUI
+import CoreData
+
+ 
 
 func fireworkHapticEffect() {
     let generator = UIImpactFeedbackGenerator(style: .heavy)
     generator.impactOccurred()
     DispatchQueue.global().async {
         for _ in 1...15 {
-            usleep(10000)  // Reduced for faster haptics
+            usleep(15000)  // Slightly adjusted sleep duration for better haptic effect
             DispatchQueue.main.async {
                 generator.impactOccurred()
             }
@@ -21,8 +24,22 @@ func fireworkHapticEffect() {
     }
 }
 
-struct Hexagon: Shape {
+
+struct MorphingShape: Shape {
+    var animationProgress: CGFloat
+
     func path(in rect: CGRect) -> Path {
+        if animationProgress <= 0.5 {
+            return hexagonPath(in: rect, progress: animationProgress * 2)
+        } else {
+            return roundedRectPath(in: rect, progress: (animationProgress - 0.5) * 2)
+        }
+    }
+
+
+    private func hexagonPath(in rect: CGRect, progress: CGFloat) -> Path {
+        // ... (Your existing hexagon path code here)
+        // For now, let's assume it's a simple hexagon path
         let sides = 6
         let angle = 2.0 * .pi / Double(sides)
         let center = CGPoint(x: rect.width / 2, y: rect.height / 2)
@@ -30,8 +47,8 @@ struct Hexagon: Shape {
         var path = Path()
         
         for i in 0..<sides {
-            let x = center.x + radius * cos(Double(i) * angle)
-            let y = center.y + radius * sin(Double(i) * angle)
+            let x = center.x + radius * CGFloat(cos(Double(i) * angle))
+            let y = center.y + radius * CGFloat(sin(Double(i) * angle))
             if i == 0 {
                 path.move(to: CGPoint(x: x, y: y))
             } else {
@@ -39,8 +56,16 @@ struct Hexagon: Shape {
             }
         }
         path.closeSubpath()
-        
         return path
+    }
+
+    private func roundedRectPath(in rect: CGRect, progress: CGFloat) -> Path {
+        let cornerRadius = interpolate(from: 0, to: rect.width / 4, progress: progress)
+        return RoundedRectangle(cornerRadius: cornerRadius).path(in: rect)
+    }
+
+    private func interpolate(from: CGFloat, to: CGFloat, progress: CGFloat) -> CGFloat {
+        return from + (to - from) * progress
     }
 }
 
@@ -50,7 +75,7 @@ struct ImageViewWrapper: UIViewRepresentable {
     
     func makeUIView(context: Context) -> UIImageView {
         let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit  // Added this line
+        imageView.contentMode = .scaleAspectFit
         imageView.loadGif(name: imageName) { duration in
             completion?(duration)
         }
@@ -97,21 +122,50 @@ struct AnimatedHexagon: View {
     var color: Color
     var strokeWidth: CGFloat
     var hexagonScale: CGFloat
+    var animationProgress: CGFloat
     
     var body: some View {
         ZStack {
             VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                .frame(width: 300, height: 300)  // static size specified here
-                .clipShape(Hexagon())
+                .frame(width: 300, height: 300)
+                .clipShape(MorphingShape(animationProgress: animationProgress))
             
-            Hexagon()
+            MorphingShape(animationProgress: animationProgress)
                 .stroke(color, lineWidth: strokeWidth)
         }
-        .frame(width: 300, height: 300)  // static size specified here
+        .frame(width: 300, height: 300)
         .scaleEffect(hexagonScale)
-        .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1), value: hexagonScale)  // Applying animation here
+        .animation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1), value: hexagonScale)
     }
 }
+
+// Struct for GifView
+struct GifView: UIViewRepresentable {
+    var gifName: String
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        let imageView = UIImageView()
+        imageView.loadGif(name: gifName)
+        imageView.contentMode = .scaleAspectFit
+        view.addSubview(imageView)
+        
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            imageView.topAnchor.constraint(equalTo: view.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
+
+
 
 struct ContentView: View {
     @State var expandCamera = false
@@ -137,15 +191,25 @@ struct ContentView: View {
     @StateObject var networkManager = NetworkManager()
     @State var capturedColor: Color = Color.white  // Default to white
     @State var capturedHexCode: String = "#FFFFFF"  // Default value
-
+    @Environment(\.managedObjectContext) private var managedObjectContext
+    @State private var animationProgress: CGFloat = 0
+    @State private var hideSaveButton: Bool = false
+    @State private var currentFrameIndex = 0
+    
+    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+    
+    let myColorsFrames: [Image] = (1...98).map { Image("MYcolors-\($0)") }
+    
     var body: some View {
         GeometryReader{ geometry in
             ZStack {
+                #if !DEBUG
                 if showCamera {
                     CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .animation(Animation.easeInOut(duration: 4), value: expandCamera)
                 }
+                #endif
                 if showGIF {
                     ImageViewWrapper(imageName: "launch") { _ in
                         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
@@ -160,49 +224,63 @@ struct ContentView: View {
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)  // Specify the frame size directly here
                 }
-
                 
                 if showCamera && !showGIF {
                     ColorChangingComponent(
                         color: Color(hex: detectedHexColor),
-                        reverseRotation: $reverseRotation,
                         scale: $shutterScale
                     )
                     .frame(width: 100, height: 100)
                 }
+
                 
                 //BUTTON 1 MY COLORS
                 if isButtonClicked {
                     Button(action: {
-                        // your button action here
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
+                            animationProgress = animationProgress == 0 ? 1 : 0
+                            hideSaveButton.toggle()
+                            if !hideSaveButton {
+                                captureButtonScale = 1.0
+                            }
+                        }
                     }) {
                         ZStack {
-                                    VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                                        .frame(width: 145, height: 30)
-                                        .cornerRadius(30)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 30)
-                                                .stroke(Color(hex: capturedHexCode), lineWidth: 2)
-                                        )
-                                    Text("My Colors")
-                                        .foregroundColor(.primary)
-                                        .bold()
-                                        .kerning(2.0)
+                            VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                                .frame(width: 145, height: 30)
+                                .cornerRadius(30)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color(hex: capturedHexCode), lineWidth: 2)
+                                )
+                            myColorsFrames[currentFrameIndex]
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 100, height: 15)
+                                .onReceive(timer) { _ in
+                                    currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // Update the frame index to show the next frame
                                 }
-                            }
+                            MorphingShape(animationProgress: animationProgress)
+                                .fill(Color.clear)
+                                .stroke(Color.clear, lineWidth: 0)
+                                .frame(width: 200, height: 200)
+                                .opacity(animationProgress)
+                                .animation(.spring(response: 0.3, dampingFraction: 0.2, blendDuration: 0), value: animationProgress)
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
                     .offset(y: self.buttonOffset - 30)
-                        .opacity(buttonOpacity)
-                        .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
-                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
-                        .onAppear {
-                            animateButtonToFinalPosition()
+                    .opacity(buttonOpacity)
+                    .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
+                    .onAppear {
+                        animateButtonToFinalPosition()
                     }
                 }
-                //BUTTON 2 SAVE COLOR
+                
                 //BUTTON 2 SAVE COLOR
                 if isButtonClicked {
                     Button(action: {
-                        // Define your action for Save Color button
                     }) {
                         ZStack {
                             VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
@@ -220,22 +298,20 @@ struct ContentView: View {
                     .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset + 120)  // Updated position
                         .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.4), value: buttonOffset)  // Ensure animation is correct
                 }
-
                 
                 // Hexagon
                 if isButtonClicked {
                     AnimatedHexagon(
                         color: isButtonClicked ? Color(hex: capturedHexCode) : Color(hex: detectedHexColor),
                         strokeWidth: strokeWidth,
-                        hexagonScale: hexagonScale
+                        hexagonScale: hexagonScale,  // No $ symbol required
+                        animationProgress: animationProgress  // No $ symbol required
                     )
-
+                    
                     // For displaying the hex code value:
                     ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
                         .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-
                 }
-                
                 
                 // Capture Button
                 if showCaptureButton && showCamera {
@@ -279,85 +355,78 @@ struct ContentView: View {
             }
         }
     }
+    
     private func animateButtonToFinalPosition() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.buttonOffset = 100
             self.buttonOpacity = 1
         }
     }
-
     
-    
-    
-    
-    // Helper function to animate the button back to its start position
     private func animateButtonToStartPosition() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.buttonOffset = 0
             self.buttonOpacity = 0
         }
     }
-    struct ColorChangingComponent: View {
-        var color: Color
-        @Binding var reverseRotation: Bool
-        @Binding var scale: CGFloat
-        @State private var rotation: Double = 0
-        @State private var targetRotation: Double = 360
-        
-        var body: some View {
-            Image("shutterwhite")
-                .resizable()
-                .scaledToFit()
-                .colorMultiply(color)
-                .rotationEffect(.degrees(rotation))
-                .scaleEffect(scale)
-                .onAppear() {
-                    startRotation()
-                }
-                .onChange(of: reverseRotation) {
-                    targetRotation = rotation + (reverseRotation ? -360 : 360)
-                    startRotation()
-                }
-        }
-        
-        private func startRotation() {
-            withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {  // Reduced duration to 5 seconds
-                rotation = targetRotation
+}
+
+struct ColorChangingComponent: View {
+    var color: Color
+    @Binding var scale: CGFloat
+    @State private var currentFrameIndex = 0
+    @State private var rotationAngle: Double = 0  // New state variable for managing rotation
+    let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
+
+    let shutterFrames: [Image] = (1...39).map { Image("rainShut-\($0)") }  // Assuming you have 39 frames
+
+    var body: some View {
+        shutterFrames[currentFrameIndex]
+            .resizable()
+            .onReceive(timer) { _ in
+                currentFrameIndex = (currentFrameIndex + 1) % shutterFrames.count
             }
-        }
+            .rotationEffect(.degrees(rotationAngle))
+            .animation(Animation.linear(duration: 5).repeatForever(autoreverses: false), value: rotationAngle)
+            .scaleEffect(scale)
+            .animation(Animation.spring(response: 0.3, dampingFraction: 0.6).delay(0.1), value: scale)
+            .onAppear {
+                withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
+                    rotationAngle = 360
+                }
+            }
     }
 }
 
 extension Color {
     init(hex: String) {
-                    let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-                    var int: UInt64 = 0
-                    Scanner(string: hex).scanHexInt64(&int)
-                    let r, g, b: UInt64
-                    switch hex.count {
-                    case 6:
-                        (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
-                    default:
-                        (r, g, b) = (1, 1, 1)
-                    }
-                    self.init(
-                        .sRGB,
-                        red: Double(r) / 255,
-                        green: Double(g) / 255,
-                        blue: Double(b) / 255,
-                        opacity: 1
-                    )
-                }
-            }
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r, g, b: UInt64
+        switch hex.count {
+        case 6:
+            (r, g, b) = (int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (r, g, b) = (1, 1, 1)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: 1
+        )
+    }
+}
 
-    
-    struct ContentView_Previews: PreviewProvider {
-        static var previews: some View {
-            Group {
-                ContentView()
-                    .previewDevice("iPhone 12")
-                ContentView()
-                    .previewDevice("iPhone SE (2nd generation)")
-            }
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            ContentView()
+                .previewDevice("iPhone 12")
+            ContentView()
+                .previewDevice("iPhone SE (2nd generation)")
         }
     }
+}

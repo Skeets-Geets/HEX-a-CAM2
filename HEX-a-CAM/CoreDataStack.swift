@@ -9,11 +9,11 @@ import Foundation
 import CoreData
 
 class CoreDataStack {
-
-    static let shared = CoreDataStack()  // Singleton pattern
-
+    
+    static let shared = CoreDataStack()
+    
     lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "HEX-a-CAM")
+        let container = NSPersistentContainer(name: "Model")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
@@ -21,11 +21,11 @@ class CoreDataStack {
         })
         return container
     }()
-
+    
     var context: NSManagedObjectContext {
         return persistentContainer.viewContext
     }
-
+    
     func saveContext () {
         let context = persistentContainer.viewContext
         if context.hasChanges {
@@ -38,16 +38,14 @@ class CoreDataStack {
         }
     }
     
-    
     func saveColor(name: String, hexCode: String) {
-        let colorEntity = NSEntityDescription.entity(forEntityName: "SavedColor", in: context)!
-        let color = NSManagedObject(entity: colorEntity, insertInto: context)
-        color.setValue(name, forKey: "colorName")
-        color.setValue(hexCode, forKey: "hexCode")
-        
+        let color = NSEntityDescription.insertNewObject(forEntityName: "SavedColor", into: context) as! SavedColor
+        color.colorName = name
+        color.hexCode = hexCode
+
         saveContext()
     }
-    
+
     
     func fetchSavedColors() -> [NSManagedObject] {
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "SavedColor")
