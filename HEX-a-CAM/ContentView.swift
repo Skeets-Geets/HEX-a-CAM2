@@ -168,6 +168,7 @@ struct GifView: UIViewRepresentable {
 
 
 struct ContentView: View {
+    let shutterFrames: [Image] = (1...21).map { Image("rainShut-\($0)") }
     @State var expandCamera = false
     @State var showHexColor = false
     @State var showGIF = true
@@ -196,26 +197,52 @@ struct ContentView: View {
     @State private var hideSaveButton: Bool = false
     @State private var currentFrameIndex = 0
     @ObservedObject var cameraViewModel: CameraViewModel
+    @State var rotationAngle: Double = 0
+    @State var shouldShowRainShut = false
     
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     
     let myColorsFrames: [Image] = (1...19).map { Image("MYcolors-\($0)") }
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                cameraSection(geometry: geometry)
-                gifSection(geometry: geometry)
-                buttonSection(geometry: geometry)
-                hexagonSection(geometry: geometry)
-                captureButtonSection(geometry: geometry)
+            GeometryReader { geometry in
+                ZStack {
+                    cameraSection(geometry: geometry)
+                    gifSection(geometry: geometry)
+                    buttonSection(geometry: geometry, shutterFrames: shutterFrames, rotationAngle: $rotationAngle)
+                    hexagonSection(geometry: geometry)
+                    captureButtonSection(geometry: geometry)
+                    
+                    // Display ColorChangingComponent if shouldShowRainShut is true
+                    if shouldShowRainShut {
+                        ColorChangingComponent(color: Color.white, scale: $shutterScale)
+                            .zIndex(0)
+                    }
+                }
             }
             .onAppear {
                 self.showGIF = true
+                self.shutterScale = 0.5
             }
         }
-    }
-    
+    @ViewBuilder
+        private func gifSection(geometry: GeometryProxy) -> some View {
+            if showGIF {
+                ImageViewWrapper(imageName: "launch") { _ in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+                        withAnimation {
+                            self.showGIF = false
+                            self.showCamera = true
+                            self.expandCamera = true
+                        }
+                        self.showHexColor = true
+                        self.showCaptureButton = true
+                        self.shouldShowRainShut = true  // Set this to true when the GIF is done
+                    }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+            }
+        }
     @ViewBuilder
     private func cameraSection(geometry: GeometryProxy) -> some View {
         if showCamera {
@@ -223,32 +250,14 @@ struct ContentView: View {
             CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .animation(Animation.easeInOut(duration: 4), value: expandCamera)
-           
-        }
-    }
-    
-    @ViewBuilder
-    private func gifSection(geometry: GeometryProxy) -> some View {
-        if showGIF {
-            ImageViewWrapper(imageName: "launch") { _ in
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                    withAnimation {
-                        self.showGIF = false
-                        self.showCamera = true
-                        self.expandCamera = true
-                    }
-                    self.showHexColor = true
-                    self.showCaptureButton = true
-                }
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)  // Specify the frame size directly here
+            
         }
     }
     
     
     //BUTTON 1 MY COLORS
     @ViewBuilder
-    private func buttonSection(geometry: GeometryProxy) -> some View {
+    private func buttonSection(geometry: GeometryProxy, shutterFrames: [Image], rotationAngle: Binding<Double>) -> some View {
         if isButtonClicked {
             Button(action: {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
@@ -272,8 +281,11 @@ struct ContentView: View {
                         .scaledToFit()
                         .frame(width: 100, height: 15)
                         .onReceive(timer) { _ in
-                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // Update the frame index to show the next frame
+                            print("Timer fired, updating frame index.")
+                            print("Current index: \(currentFrameIndex), Array count: \(myColorsFrames.count)")  // Use myColorsFrames.count
+                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // Use myColorsFrames.count
                         }
+
                     MorphingShape(animationProgress: animationProgress)
                         .fill(Color.clear)
                         .stroke(Color.clear, lineWidth: 0)
@@ -288,11 +300,13 @@ struct ContentView: View {
             .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
             .onAppear {
-                animateButtonToFinalPosition()
+                        print("ColorChangingComponent appeared, starting rotation.")
+                        withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
+                            rotationAngle.wrappedValue = 360.0  // Change this line
+                        }
+                    }
+                }
             }
-        }
-    }
-    
     
     // Hexagon
     @ViewBuilder
@@ -304,7 +318,7 @@ struct ContentView: View {
                 hexagonScale: hexagonScale,  // No $ symbol required
                 animationProgress: animationProgress  // No $ symbol required
             )
-            
+            .zIndex(1)
             // For displaying the hex code value:
             ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
                 .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
@@ -366,14 +380,20 @@ struct ColorChangingComponent: View {
     @State private var rotationAngle: Double = 0  // New state variable for managing rotation
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-    let shutterFrames: [Image] = (1...21).map { Image("rainShut-\($0)") }  // Assuming you have 39 frames
+    let shutterFrames: [Image] = (1...20).map { Image("rainShut-\($0)") }
 
     var body: some View {
         shutterFrames[currentFrameIndex]
             .resizable()
+            .scaledToFit()
+            .frame(width: 100, height: 100)
             .onReceive(timer) { _ in
-                currentFrameIndex = (currentFrameIndex + 1) % shutterFrames.count
+                print("Timer fired, updating frame index.")
+                if shutterFrames.count > 0 {  // Check that the array is not empty
+                    currentFrameIndex = (currentFrameIndex + 1) % shutterFrames.count
+                }
             }
+
             .rotationEffect(.degrees(rotationAngle))
             .animation(Animation.linear(duration: 5).repeatForever(autoreverses: false), value: rotationAngle)
             .scaleEffect(scale)

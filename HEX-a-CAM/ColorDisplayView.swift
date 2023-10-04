@@ -57,6 +57,7 @@ struct ColorDisplayView: View {
         .onAppear {
             networkManager.fetchColorInfo(hex: detectedHexColor)
         }
+        .zIndex(2)
     }
 }
 
