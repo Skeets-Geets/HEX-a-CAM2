@@ -195,178 +195,166 @@ struct ContentView: View {
     @State private var animationProgress: CGFloat = 0
     @State private var hideSaveButton: Bool = false
     @State private var currentFrameIndex = 0
+    @ObservedObject var cameraViewModel: CameraViewModel
     
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
     
-    let myColorsFrames: [Image] = (1...98).map { Image("MYcolors-\($0)") }
+    let myColorsFrames: [Image] = (1...19).map { Image("MYcolors-\($0)") }
     
     var body: some View {
-        GeometryReader{ geometry in
+        GeometryReader { geometry in
             ZStack {
-                #if !DEBUG
-                if showCamera {
-                    CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .animation(Animation.easeInOut(duration: 4), value: expandCamera)
-                }
-                #endif
-                if showGIF {
-                    ImageViewWrapper(imageName: "launch") { _ in
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            withAnimation {
-                                self.showGIF = false
-                                self.showCamera = true
-                                self.expandCamera = true
-                            }
-                            self.showHexColor = true
-                            self.showCaptureButton = true
-                        }
-                    }
-                    .frame(width: geometry.size.width, height: geometry.size.height)  // Specify the frame size directly here
-                }
-                
-                if showCamera && !showGIF {
-                    ColorChangingComponent(
-                        color: Color(hex: detectedHexColor),
-                        scale: $shutterScale
-                    )
-                    .frame(width: 100, height: 100)
-                }
-
-                
-                //BUTTON 1 MY COLORS
-                if isButtonClicked {
-                    Button(action: {
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
-                            animationProgress = animationProgress == 0 ? 1 : 0
-                            hideSaveButton.toggle()
-                            if !hideSaveButton {
-                                captureButtonScale = 1.0
-                            }
-                        }
-                    }) {
-                        ZStack {
-                            VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                                .frame(width: 145, height: 30)
-                                .cornerRadius(30)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color(hex: capturedHexCode), lineWidth: 2)
-                                )
-                            myColorsFrames[currentFrameIndex]
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 100, height: 15)
-                                .onReceive(timer) { _ in
-                                    currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // Update the frame index to show the next frame
-                                }
-                            MorphingShape(animationProgress: animationProgress)
-                                .fill(Color.clear)
-                                .stroke(Color.clear, lineWidth: 0)
-                                .frame(width: 200, height: 200)
-                                .opacity(animationProgress)
-                                .animation(.spring(response: 0.3, dampingFraction: 0.2, blendDuration: 0), value: animationProgress)
-                        }
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .offset(y: self.buttonOffset - 30)
-                    .opacity(buttonOpacity)
-                    .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
-                    .onAppear {
-                        animateButtonToFinalPosition()
-                    }
-                }
-                
-                //BUTTON 2 SAVE COLOR
-                if isButtonClicked {
-                    Button(action: {
-                    }) {
-                        ZStack {
-                            VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                                .frame(width: 120, height: 30)
-                                .cornerRadius(30)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 30)
-                                        .stroke(Color(hex: capturedHexCode), lineWidth: 2)
-                                )
-                            Text("Save Color")
-                                .foregroundColor(.white)
-                                .bold()
-                        }
-                    }
-                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset + 120)  // Updated position
-                        .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.4), value: buttonOffset)  // Ensure animation is correct
-                }
-                
-                // Hexagon
-                if isButtonClicked {
-                    AnimatedHexagon(
-                        color: isButtonClicked ? Color(hex: capturedHexCode) : Color(hex: detectedHexColor),
-                        strokeWidth: strokeWidth,
-                        hexagonScale: hexagonScale,  // No $ symbol required
-                        animationProgress: animationProgress  // No $ symbol required
-                    )
-                    
-                    // For displaying the hex code value:
-                    ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
-                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-                }
-                
-                // Capture Button
-                if showCaptureButton && showCamera {
-                    Button(action: {
-                        isButtonClicked.toggle()
-                        reverseRotation.toggle()
-                        capturedHexCode = detectedHexColor  // Update capturedHexCode here
-                        
-                        withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
-                            hexagonScale = isButtonClicked ? 1 : 0.01
-                            strokeWidth = isButtonClicked ? 10 : 2  // Toggle the stroke width
-                            shutterScale = isButtonClicked ? 0.1 : 1.0  // Toggle the shutter scale
-                        }
-                        
-                        // New code to animate button
-                        withAnimation(Animation.spring(response: 0.3, dampingFraction: 15, blendDuration: 10)) {
-                            self.buttonOffset = isButtonClicked ? 60 : 0  // Toggle position
-                            self.buttonOpacity = isButtonClicked ? 1 : 0  // Toggle opacity
-                            self.saveButtonOffset = isButtonClicked ? 120 : 0  // Toggle position for Save Color button
-                            self.saveButtonOpacity = isButtonClicked ? 1 : 0  // Toggle opacity for Save Color button
-                            self.captureButtonScale = isButtonClicked ? 1.2 : 1.0  // Toggle scale for Capture Button
-                        }
-                        
-                        fireworkHapticEffect()
-                        
-                    }) {
-                        Image(systemName: isButtonClicked ? "chevron.backward.circle.fill" : "button.programmable")
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(isButtonClicked ? Color.green : Color.white)
-                            .scaleEffect(captureButtonScale)  // Apply the scale effect here
-                            .animation(Animation.spring(response: 0.3, dampingFraction: 0.6).delay(0.1), value: captureButtonScale)  // Spring animation for scale effect
-                    }
-                    .position(x: geometry.size.width / 2, y: geometry.size.height - geometry.size.height * 0.05)
-  // Adjusted the y position
-                }
+                cameraSection(geometry: geometry)
+                gifSection(geometry: geometry)
+                buttonSection(geometry: geometry)
+                hexagonSection(geometry: geometry)
+                captureButtonSection(geometry: geometry)
             }
-            
-            .onAppear() {
+            .onAppear {
                 self.showGIF = true
             }
         }
     }
     
+    @ViewBuilder
+    private func cameraSection(geometry: GeometryProxy) -> some View {
+        if showCamera {
+            
+            CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .animation(Animation.easeInOut(duration: 4), value: expandCamera)
+           
+        }
+    }
+    
+    @ViewBuilder
+    private func gifSection(geometry: GeometryProxy) -> some View {
+        if showGIF {
+            ImageViewWrapper(imageName: "launch") { _ in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                    withAnimation {
+                        self.showGIF = false
+                        self.showCamera = true
+                        self.expandCamera = true
+                    }
+                    self.showHexColor = true
+                    self.showCaptureButton = true
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)  // Specify the frame size directly here
+        }
+    }
+    
+    
+    //BUTTON 1 MY COLORS
+    @ViewBuilder
+    private func buttonSection(geometry: GeometryProxy) -> some View {
+        if isButtonClicked {
+            Button(action: {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
+                    animationProgress = animationProgress == 0 ? 1 : 0
+                    hideSaveButton.toggle()
+                    if !hideSaveButton {
+                        captureButtonScale = 1.0
+                    }
+                }
+            }) {
+                ZStack {
+                    VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                        .frame(width: 145, height: 30)
+                        .cornerRadius(30)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color(hex: capturedHexCode), lineWidth: 2)
+                        )
+                    myColorsFrames[currentFrameIndex]
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 100, height: 15)
+                        .onReceive(timer) { _ in
+                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // Update the frame index to show the next frame
+                        }
+                    MorphingShape(animationProgress: animationProgress)
+                        .fill(Color.clear)
+                        .stroke(Color.clear, lineWidth: 0)
+                        .frame(width: 200, height: 200)
+                        .opacity(animationProgress)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.2, blendDuration: 0), value: animationProgress)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .offset(y: self.buttonOffset - 30)
+            .opacity(buttonOpacity)
+            .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
+            .onAppear {
+                animateButtonToFinalPosition()
+            }
+        }
+    }
+    
+    
+    // Hexagon
+    @ViewBuilder
+    private func hexagonSection(geometry: GeometryProxy) -> some View {
+        if isButtonClicked {
+            AnimatedHexagon(
+                color: isButtonClicked ? Color(hex: capturedHexCode) : Color(hex: detectedHexColor),
+                strokeWidth: strokeWidth,
+                hexagonScale: hexagonScale,  // No $ symbol required
+                animationProgress: animationProgress  // No $ symbol required
+            )
+            
+            // For displaying the hex code value:
+            ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+        }
+    }
+    
+    
+    // Capture Button
+    @ViewBuilder
+    private func captureButtonSection(geometry: GeometryProxy) -> some View {
+        if showCaptureButton && showCamera {
+            Button(action: {
+                isButtonClicked.toggle()
+                cameraViewModel.stopCameraFeed()  // Stopping the camera feed on the instance
+                reverseRotation.toggle()
+                capturedHexCode = detectedHexColor  // Update capturedHexCode here
+                
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
+                    hexagonScale = isButtonClicked ? 1 : 0.01
+                    strokeWidth = isButtonClicked ? 10 : 2  // Toggle the stroke width
+                    shutterScale = isButtonClicked ? 0.1 : 1.0  // Toggle the shutter scale
+                }
+                
+                withAnimation(Animation.spring(response: 0.3, dampingFraction: 15, blendDuration: 10)) {
+                    self.buttonOffset = isButtonClicked ? 60 : 0  // Toggle position
+                    self.buttonOpacity = isButtonClicked ? 1 : 0  // Toggle opacity
+                    self.saveButtonOffset = isButtonClicked ? 120 : 0  // Toggle position for Save Color button
+                    self.saveButtonOpacity = isButtonClicked ? 1 : 0  // Toggle opacity for Save Color button
+                    self.captureButtonScale = isButtonClicked ? 1.2 : 1.0  // Toggle scale for Capture Button
+                }
+                
+                fireworkHapticEffect()
+                
+            }) {
+                Image(systemName: isButtonClicked ? "chevron.backward.circle.fill" : "button.programmable")
+                    .resizable()
+                    .frame(width: 60, height: 60)
+                    .foregroundColor(isButtonClicked ? Color.green : Color.white)
+                    .scaleEffect(captureButtonScale)  // Apply the scale effect here
+                    .animation(Animation.spring(response: 0.3, dampingFraction: 0.6).delay(0.1), value: captureButtonScale)  // Spring animation for scale effect
+            }
+            .position(x: geometry.size.width / 2, y: geometry.size.height - geometry.size.height * 0.05)  // Adjusted the y position
+        }
+    }
+    
+    
     private func animateButtonToFinalPosition() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.buttonOffset = 100
             self.buttonOpacity = 1
-        }
-    }
-    
-    private func animateButtonToStartPosition() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.buttonOffset = 0
-            self.buttonOpacity = 0
         }
     }
 }
@@ -378,7 +366,7 @@ struct ColorChangingComponent: View {
     @State private var rotationAngle: Double = 0  // New state variable for managing rotation
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
-    let shutterFrames: [Image] = (1...39).map { Image("rainShut-\($0)") }  // Assuming you have 39 frames
+    let shutterFrames: [Image] = (1...21).map { Image("rainShut-\($0)") }  // Assuming you have 39 frames
 
     var body: some View {
         shutterFrames[currentFrameIndex]
@@ -422,11 +410,14 @@ extension Color {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
+        let dummyCameraViewModel = CameraViewModel() // Create a "dummy" view model
+
         Group {
-            ContentView()
+            ContentView(cameraViewModel: dummyCameraViewModel) // Pass it here
                 .previewDevice("iPhone 12")
-            ContentView()
+            ContentView(cameraViewModel: dummyCameraViewModel) // And here
                 .previewDevice("iPhone SE (2nd generation)")
         }
     }
 }
+

@@ -9,12 +9,11 @@ import SwiftUI
 
 @main
 struct HEX_a_CAMApp: App {
-    let persistenceController = PersistenceController.shared
-
+    var cameraViewModel = CameraViewModel() // Create an instance of CameraViewModel
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            ContentView(cameraViewModel: cameraViewModel) // Pass the instance here
         }
     }
 }

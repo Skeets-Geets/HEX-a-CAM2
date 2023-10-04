@@ -4,6 +4,7 @@
 //
 //  Created by GEET on 9/3/23.
 //
+//
 import SwiftUI
 import AVFoundation
 import UIKit
@@ -11,49 +12,41 @@ import UIKit
 struct CameraView: View {
     @Binding var expandCamera: Bool
     @Binding var showHexColor: Bool
-    @StateObject var cameraViewModel = CameraViewModel()
+    @StateObject var el = CameraViewModel()
     @Binding var detectedHexColor: String  // The Binding variable
     @State private var zoomFactor: CGFloat = 1.0 // Initial zoom factor
     
     var body: some View {
         ZStack {
-            CameraPreview(cameraViewModel: cameraViewModel)
+            CameraPreview(el: el)
                 .ignoresSafeArea()
             
             VStack {
                 Spacer()
-                if cameraViewModel.minZoomFactor < cameraViewModel.maxZoomFactor {
-                    Slider(value: $zoomFactor, in: cameraViewModel.minZoomFactor...cameraViewModel.maxZoomFactor, step: 0.1)
+                Slider(value: $el.currentZoomFactor, in: el.minZoomFactor...el.maxZoomFactor, step: 0.1)
                         .padding()
-                        .onChange(of: zoomFactor) {
-                            cameraViewModel.set(zoom: zoomFactor)
+                        .onChange(of: zoomFactor) { newValue in
+                            el.set(zoom: zoomFactor)
                         }
 
-                }
             }
         }
-        .onAppear(perform: cameraViewModel.configureCaptureSession)
-        .onAppear {  // Update detectedHexColor when the view appears
-            self.detectedHexColor = cameraViewModel.colorHex
+        .onAppear(perform: el.configureCaptureSession)
+        .onChange(of: el.colorHex) { newValue in
+            self.detectedHexColor = el.colorHex
         }
-        .onChange(of: cameraViewModel.colorHex) {
-            self.detectedHexColor = cameraViewModel.colorHex
-        }
-
     }
 }
 
-
-
 struct CameraPreview: UIViewRepresentable {
-    @ObservedObject var cameraViewModel: CameraViewModel
+    @ObservedObject var el: CameraViewModel
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: UIScreen.main.bounds)
         
-        let previewLayer = AVCaptureVideoPreviewLayer(session: cameraViewModel.captureSession)
+        let previewLayer = AVCaptureVideoPreviewLayer(session: el.captureSession)
         previewLayer.frame = view.frame
-        previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
         view.layer.addSublayer(previewLayer)
         
         // Add pinch gesture recognizer
@@ -68,28 +61,27 @@ struct CameraPreview: UIViewRepresentable {
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self, cameraViewModel: cameraViewModel)
+        Coordinator(self, el: el)
     }
     
     class Coordinator: NSObject {
         var view: CameraPreview
-        var cameraViewModel: CameraViewModel
+        var el: CameraViewModel
         
-        init(_ view: CameraPreview, cameraViewModel: CameraViewModel) {
+        init(_ view: CameraPreview, el: CameraViewModel) {
             self.view = view
-            self.cameraViewModel = cameraViewModel
+            self.el = el
         }
         
         @objc func handlePinch(_ pinch: UIPinchGestureRecognizer) {
             switch pinch.state {
             case .began:
-                pinch.scale = cameraViewModel.currentZoomFactor
-            case .changed:
-                let scale = pinch.scale
-                cameraViewModel.set(zoom: scale)
+                pinch.scale = CGFloat(el.currentZoomFactor)  // Convert to CGFloat
             default:
-                break
+                el.set(zoom: pinch.scale)  // Convert to Float
             }
         }
+
     }
 }
+

@@ -10,35 +10,33 @@ import UIKit
 import CoreGraphics
 
 class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, ObservableObject {
-    let captureSession = AVCaptureSession()
+    var captureSession: AVCaptureSession = AVCaptureSession()
+    var videoDeviceInput: AVCaptureDeviceInput!
+    
     @Published var colorHex: String = "#FFFFFF"
-    var minZoomFactor: CGFloat = 1.0
-    var maxZoomFactor: CGFloat = 1.0
-    var currentZoomFactor: CGFloat = 1.0
+    @Published var currentZoomFactor: CGFloat = 1.0  // Add this line
+    var minZoomFactor: CGFloat = 1.0  // Add this line
+    var maxZoomFactor: CGFloat = 4.0  // Add this line
+    
     var lastNColors: [UIColor] = []  // To keep track of the last 'n' colors
     let n = 10  // Number of frames to average over
     
-    var videoDeviceInput: AVCaptureDeviceInput!
-
+    func stopCameraFeed() {
+        let captureSession = AVCaptureSession()  // Example initialization, replace as needed
+        captureSession.beginConfiguration()
+    }
+        func resumeCameraFeed() {
+            let captureSession = AVCaptureSession()  // Example initialization, replace as needed
+           captureSession.commitConfiguration()
+        }
     func configureCaptureSession() {
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             fatalError("No back camera available.")
         }
-
-        func configureCaptureSession() {
-           
-            
-            if let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
-                minZoomFactor = camera.minAvailableVideoZoomFactor
-                maxZoomFactor = camera.maxAvailableVideoZoomFactor
-            }
-            
-            
-        }
-
+        
         do {
-            videoDeviceInput = try AVCaptureDeviceInput(device: camera)  // Initialize the property here
-            captureSession.addInput(videoDeviceInput)
+            let input = try AVCaptureDeviceInput(device: camera)
+            captureSession.addInput(input)
             
             let output = AVCaptureVideoDataOutput()
             output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
@@ -52,21 +50,25 @@ class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, O
         }
     }
     
-    public func set(zoom: CGFloat) {
-        let factor = zoom < 1 ? 1 : zoom
-        let device = self.videoDeviceInput.device
-        
+    func startSession() {  // Add this method
+        captureSession.startRunning()
+    }
+
+    func endSession() {  // Add this method
+        captureSession.stopRunning()
+    }
+    
+    func set(zoom: CGFloat) {  // Add this method
+        let device = videoDeviceInput.device  // Directly use the device
         do {
             try device.lockForConfiguration()
-            device.videoZoomFactor = factor
+            device.videoZoomFactor = zoom
             device.unlockForConfiguration()
         } catch {
-            print(error.localizedDescription)
+            print("Error setting zoom: \(error)")
         }
     }
     
-    
-    //logic for my core hex calculator and convertor
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
             guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
             let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
@@ -136,8 +138,7 @@ extension UIImage {
         let a = CGFloat(data[pixelInfo+3]) / CGFloat(255.0)
         
         return UIColor(red: r, green: g, blue: b, alpha: a)
+
     }
 }
-
-// Add this inside your CameraViewModel.swift
 
