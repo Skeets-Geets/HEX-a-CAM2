@@ -298,7 +298,8 @@ struct ContentView: View {
             .offset(y: self.buttonOffset - 30)
             .opacity(buttonOpacity)
             .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
-            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset)
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset + 70)
+
             .onAppear {
                         print("ColorChangingComponent appeared, starting rotation.")
                         withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
