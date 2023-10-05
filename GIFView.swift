@@ -15,7 +15,7 @@ struct GIFView: UIViewRepresentable {
     func makeUIView(context: UIViewRepresentableContext<GIFView>) -> UIView {
         let view = UIView()
         
-        // Create an ImageView
+        
         let imageView = UIImageView()
         imageView.loadGif(name: name)
         
@@ -35,6 +35,6 @@ struct GIFView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIView, context: UIViewRepresentableContext<GIFView>) {
-        // Update the UI if needed
+        
     }
 }

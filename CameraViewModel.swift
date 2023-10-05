@@ -10,11 +10,25 @@ import UIKit
 import CoreGraphics
 
 class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, ObservableObject {
-    let captureSession = AVCaptureSession()
+    var captureSession: AVCaptureSession = AVCaptureSession()
+    var videoDeviceInput: AVCaptureDeviceInput!
+    
     @Published var colorHex: String = "#FFFFFF"
+    @Published var currentZoomFactor: CGFloat = 1.0
+    var minZoomFactor: CGFloat = 1.0
+    var maxZoomFactor: CGFloat = 4.0
+    
     var lastNColors: [UIColor] = []  // To keep track of the last 'n' colors
     let n = 10  // Number of frames to average over
     
+    func stopCameraFeed() {
+        let captureSession = AVCaptureSession()
+        captureSession.beginConfiguration()
+    }
+        func resumeCameraFeed() {
+            let captureSession = AVCaptureSession()
+           captureSession.commitConfiguration()
+        }
     func configureCaptureSession() {
         guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
             fatalError("No back camera available.")
@@ -33,6 +47,25 @@ class CameraViewModel: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, O
             }
         } catch {
             print("Error configuring capture session: \(error)")
+        }
+    }
+    
+    func startSession() {
+        captureSession.startRunning()
+    }
+
+    func endSession() {
+        captureSession.stopRunning()
+    }
+    
+    func set(zoom: CGFloat) {
+        let device = videoDeviceInput.device   
+        do {
+            try device.lockForConfiguration()
+            device.videoZoomFactor = zoom
+            device.unlockForConfiguration()
+        } catch {
+            print("Error setting zoom: \(error)")
         }
     }
     
@@ -105,6 +138,7 @@ extension UIImage {
         let a = CGFloat(data[pixelInfo+3]) / CGFloat(255.0)
         
         return UIColor(red: r, green: g, blue: b, alpha: a)
+
     }
 }
 
