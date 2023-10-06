@@ -19,10 +19,10 @@ struct GIFView: UIViewRepresentable {
         let imageView = UIImageView()
         imageView.loadGif(name: name)
         
-        // Add the ImageView as a subview of the main view
+        // added the ImageView as a subview of the main view
         view.addSubview(imageView)
         
-        // Auto-layout constraints
+        // auto-layout constraints
         imageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             imageView.widthAnchor.constraint(equalTo: view.widthAnchor),
