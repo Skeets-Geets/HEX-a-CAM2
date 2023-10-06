@@ -1,4 +1,3 @@
-
 //
 //  ContentView.swift
 //  HEX-a-CAM
@@ -189,7 +188,7 @@ struct ContentView: View {
     @State var saveButtonOpacity: Double = 0
     @State private var captureButtonScale: CGFloat = 1.0
     @StateObject var networkManager = NetworkManager()
-    @State var capturedColor: Color = Color.white  // Default to white
+    @State var capturedColor: Color = Color.white
     @State var capturedHexCode: String = "#FFFFFF"  // Default value
     @Environment(\.managedObjectContext) private var managedObjectContext
     @State private var animationProgress: CGFloat = 0
@@ -201,13 +200,13 @@ struct ContentView: View {
     @State private var showMyColorsMenu = false
     @State private var isMenuVisible: Bool = false
     @State private var isMyColorsMenuOpen = false
+    @State var menuScale: CGFloat = 0.01
 
-    
-    
+
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
-    
+
     let myColorsFrames: [Image] = (1...19).map { Image("MYcolors-\($0)") }
-    
+
     var body: some View {
             GeometryReader { geometry in
                 ZStack {
@@ -216,7 +215,7 @@ struct ContentView: View {
                     buttonSection(geometry: geometry, shutterFrames: shutterFrames, rotationAngle: $rotationAngle)
                     hexagonSection(geometry: geometry)
                     captureButtonSection(geometry: geometry)
-                    
+
                     // Display ColorChangingComponent if shouldShowRainShut is true
                     if shouldShowRainShut {
                         ColorChangingComponent(color: Color.white, scale: $shutterScale)
@@ -241,7 +240,7 @@ struct ContentView: View {
                         }
                         self.showHexColor = true
                         self.showCaptureButton = true
-                        self.shouldShowRainShut = true  // Set this to true when the GIF is done
+                        self.shouldShowRainShut = true
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
@@ -255,30 +254,30 @@ struct ContentView: View {
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .animation(Animation.easeInOut(duration: 4), value: expandCamera)
             #endif
-           
+
         }
     }
-    
-    
+
+
     //BUTTON 1 MY COLORS
     @ViewBuilder
     private func buttonSection(geometry: GeometryProxy, shutterFrames: [Image], rotationAngle: Binding<Double>) -> some View {
         if isButtonClicked {
             Button(action: {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
-                    
-                    // Reset the animationProgress to 0 to ensure the hexagon shape remains
+
+                    // animationProgress to 0 to ensure the hexagon shape remains
                     animationProgress = 0
-                    
+
                     hideSaveButton.toggle()
                     if !hideSaveButton {
                         captureButtonScale = 1.0
                     }
-                    
-                    // Toggle the MyColorsMenu visibility
+
+                    //MyColorsMenu visibility
                     isMenuVisible.toggle()
-                    
-                    // Adjust hexagon scale based on whether the menu is visible or not
+
+                    //hexagon scale based on whether the menu is visible or not
                     hexagonScale = isMenuVisible ? 0.1 : 1.0
                 }
             }) {
@@ -290,15 +289,15 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 20)
                                 .stroke(Color(hex: capturedHexCode), lineWidth: 2)
                         )
-                    
+
                     myColorsFrames[currentFrameIndex]
                         .resizable()
                         .scaledToFit()
                         .frame(width: 100, height: 15)
                         .onReceive(timer) { _ in
                             print("Timer fired, updating frame index.")
-                            print("Current index: \(currentFrameIndex), Array count: \(myColorsFrames.count)")  // Use myColorsFrames.count
-                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // Use myColorsFrames.count
+                            print("Current index: \(currentFrameIndex), Array count: \(myColorsFrames.count)")  //myColorsFrames.count
+                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // myColorsFrames.count
                         }
                 }
             }
@@ -314,7 +313,7 @@ struct ContentView: View {
                     rotationAngle.wrappedValue = 360.0
                 }
             }
-            
+
             // Display MyColorsMenu when isMenuVisible is true
             if isMenuVisible {
                 MyColorsMenu(isMenuVisible: $isMenuVisible, hexagonScale: $hexagonScale, gifFrames: myColorsFrames)
@@ -330,28 +329,30 @@ struct ContentView: View {
             }
         }
     }
-    
+
     // Hexagon
-                    @ViewBuilder
-                    private func hexagonSection(geometry: GeometryProxy) -> some View {
-                        if isButtonClicked {
-                            AnimatedHexagon(
-                                color: isButtonClicked ? Color(hex: capturedHexCode) : Color(hex: detectedHexColor),
-                                strokeWidth: strokeWidth,
-                                hexagonScale: hexagonScale,
-                                animationProgress: animationProgress
-                            )
-                            .scaleEffect(hexagonScale)
-                            .animation(.spring(), value: hexagonScale)
-                            .zIndex(1)
-            
-            // For displaying the hex code value:
-            ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
-                .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+    @ViewBuilder
+    private func hexagonSection(geometry: GeometryProxy) -> some View {
+        if isButtonClicked {
+            AnimatedHexagon(
+                color: isButtonClicked ? Color(hex: capturedHexCode) : Color(hex: detectedHexColor),
+                strokeWidth: strokeWidth,
+                hexagonScale: hexagonScale,
+                animationProgress: animationProgress
+            )
+            .scaleEffect(hexagonScale)
+            .animation(.spring(), value: hexagonScale)
+            .zIndex(1)
+
+            if !isMenuVisible {
+                // For displaying the hex code value:
+                ColorDisplayView(networkManager: networkManager, detectedHexColor: capturedHexCode, strokeColor: Color(hex: capturedHexCode))
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+            }
         }
     }
-    
-    
+
+
     // Capture Button
     @ViewBuilder
     private func captureButtonSection(geometry: GeometryProxy) -> some View {
@@ -361,13 +362,13 @@ struct ContentView: View {
                 cameraViewModel.stopCameraFeed()  // Stopping the camera feed on the instance
                 reverseRotation.toggle()
                 capturedHexCode = detectedHexColor  //capturedHexCode here
-                
+
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 1)) {
                     hexagonScale = isButtonClicked ? 1 : 0.01
-                    strokeWidth = isButtonClicked ? 10 : 2  //stroke width
-                    shutterScale = isButtonClicked ? 0.1 : 1.0  // shutter scale
+                    strokeWidth = isButtonClicked ? 10 : 2
+                    shutterScale = isButtonClicked ? 0.1 : 1.0
                 }
-                
+
                 withAnimation(Animation.spring(response: 0.3, dampingFraction: 15, blendDuration: 10)) {
                     self.buttonOffset = isButtonClicked ? 60 : 0  // Toggle position
                     self.buttonOpacity = isButtonClicked ? 1 : 0  // Toggle opacity
@@ -375,22 +376,22 @@ struct ContentView: View {
                     self.saveButtonOpacity = isButtonClicked ? 1 : 0  // Toggle opacity for Save Color button
                     self.captureButtonScale = isButtonClicked ? 1.2 : 1.0  // Toggle scale for Capture Button
                 }
-                
+
                 fireworkHapticEffect()
-                
+
             }) {
                 Image(systemName: isButtonClicked ? "chevron.backward.circle.fill" : "button.programmable")
                     .resizable()
                     .frame(width: 60, height: 60)
                     .foregroundColor(isButtonClicked ? Color.green : Color.white)
                     .scaleEffect(captureButtonScale)
-                    .animation(Animation.spring(response: 0.3, dampingFraction: 0.6).delay(0.1), value: captureButtonScale)  // Spring animation for scale effect
+                    .animation(Animation.spring(response: 0.3, dampingFraction: 0.6).delay(0.1), value: captureButtonScale)
             }
             .position(x: geometry.size.width / 2, y: geometry.size.height - geometry.size.height * 0.05)
         }
     }
-    
-    
+
+
     private func animateButtonToFinalPosition() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.buttonOffset = 100
@@ -403,7 +404,7 @@ struct ColorChangingComponent: View {
     var color: Color
     @Binding var scale: CGFloat
     @State private var currentFrameIndex = 0
-    @State private var rotationAngle: Double = 0  // New state variable for managing rotation
+    @State private var rotationAngle: Double = 0  // managing rotation
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     let shutterFrames: [Image] = (1...20).map { Image("rainShut-\($0)") }
