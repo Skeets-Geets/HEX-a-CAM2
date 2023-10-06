@@ -10,53 +10,51 @@ import UIKit
 import SpriteKit
 
 struct MyColorsMenu: View {
-    @Binding var isMenuVisible: Bool  // To control the visibility of the menu
-    @Binding var hexagonScale: CGFloat  // To control the hexagon scale
-    let gifFrames: [Image]  // This array should contain all frames of your GIF as Image objects
+    @Binding var isMenuVisible: Bool
+    @Binding var hexagonScale: CGFloat
+    let gifFrames: [Image] // This array should contain all frames of your GIF as Image objects
     @State private var currentFrameIndex = 0
     @State private var timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        VStack {
-            HStack {
-                Spacer()
-                Button("Close") {
-                    withAnimation(.spring()) {
-                        isMenuVisible = false
-                        hexagonScale = 1.0
-                    }
-                }
-                .padding()
-            }
-            
-            Text("My Colors")
-                .font(.largeTitle)
-                .bold()
-            
-            SpinningHexagonScene()
-                .ignoresSafeArea(.all)
-                .frame(width: 100, height: 100)
-                .background(.clear)
-                .gesture(
-                    DragGesture().onChanged { value in
-                    }
-                )
-            
-            Spacer()
-        }
-        .padding()
-        .background(VisualEffectView(effect: UIBlurEffect(style: .dark)))
-        .cornerRadius(20)
-    }
-}
+           VStack {
+               HStack {
+                   Spacer()
+                   Button("Close") {
+                       withAnimation {
+                           isMenuVisible.toggle()
+                           hexagonScale = 1.0
+                       }
+                   }
+                   .padding()
+               }
 
+               Text("My Colors")
+                   .font(.largeTitle)
+                   .bold()
+
+               LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 3), spacing: 20) {
+                   ForEach(0..<9) { _ in
+                       SpinningHexagonScene()
+                           .frame(width: 100, height: 100)
+                           .background(Color.clear)
+                   }
+               }
+               Spacer()
+           }
+           .padding()
+           .background(VisualEffectView(effect: UIBlurEffect(style: .dark)))
+           .cornerRadius(20)
+       }
+   }
 
 struct MyColorsMenu_Previews: PreviewProvider {
     static var previews: some View {
         MyColorsMenu(
             isMenuVisible: .constant(true),
-            hexagonScale: .constant(1.0),
-            gifFrames: [Image("frame1"), Image("frame2")] 
+            hexagonScale: .constant(1.0),  // Dummy value for hexagonScale
+            gifFrames: [Image("frame1"), Image("frame2")]
         )
     }
 }
+
