@@ -12,7 +12,7 @@ import SpriteKit
 struct MyColorsMenu: View {
     @Binding var isMenuVisible: Bool
     @Binding var hexagonScale: CGFloat
-    let gifFrames: [Image] // This array should contain all frames of your GIF as Image objects
+    let gifFrames: [Image] 
     @State private var currentFrameIndex = 0
     @State private var timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
