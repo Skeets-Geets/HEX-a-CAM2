@@ -57,4 +57,3 @@ struct MyColorsMenu_Previews: PreviewProvider {
         )
     }
 }
-

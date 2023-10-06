@@ -41,7 +41,7 @@ class MyScene: SKScene {
         let location = touch.location(in: self)
         let previousLocation = touch.previousLocation(in: self)
         let dx = location.x - previousLocation.x
-        rotationAngle += dx * 0.01
+        rotationAngle += dx * 0.05
         hexagon.xScale = cos(rotationAngle)
     }
 }

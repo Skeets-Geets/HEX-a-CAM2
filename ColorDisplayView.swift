@@ -60,3 +60,4 @@ struct ColorDisplayView: View {
         .zIndex(2)
     }
 }
+
