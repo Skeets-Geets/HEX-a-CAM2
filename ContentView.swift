@@ -267,19 +267,21 @@ struct ContentView: View {
             Button(action: {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
 
-                    // animationProgress to 0 to ensure the hexagon shape remains
+                    // Reset animation progress to 0 to ensure the hexagon shape remains intact
                     animationProgress = 0
 
+                    // Toggle Save Button visibility
                     hideSaveButton.toggle()
                     if !hideSaveButton {
                         captureButtonScale = 1.0
                     }
 
-                    //MyColorsMenu visibility
+                    // Toggle MyColorsMenu visibility
                     isMenuVisible.toggle()
 
-                    //hexagon scale based on whether the menu is visible or not
+                    // Toggle hexagon and MyColorsMenu scale
                     hexagonScale = isMenuVisible ? 0.1 : 1.0
+                    menuScale = isMenuVisible ? 1.0 : 0.01  // Toggle MyColorsMenu scale
                 }
             }) {
                 ZStack {
@@ -296,9 +298,7 @@ struct ContentView: View {
                         .scaledToFit()
                         .frame(width: 100, height: 15)
                         .onReceive(timer) { _ in
-                            print("Timer fired, updating frame index.")
-                            print("Current index: \(currentFrameIndex), Array count: \(myColorsFrames.count)")  //myColorsFrames.count
-                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count  // myColorsFrames.count
+                            currentFrameIndex = (currentFrameIndex + 1) % myColorsFrames.count
                         }
                 }
             }
@@ -307,9 +307,7 @@ struct ContentView: View {
             .opacity(buttonOpacity)
             .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: buttonOffset)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + buttonOffset + 70)
-
             .onAppear {
-                print("ColorChangingComponent appeared, starting rotation.")
                 withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
                     rotationAngle.wrappedValue = 360.0
                 }
@@ -321,16 +319,13 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black.opacity(0.5))
                     .zIndex(2)
-                    .onTapGesture {
-                        withAnimation(.spring()) {
-                            isMenuVisible = false
-                            hexagonScale = 1.0 // Scale back to original size when menu is closed
-                        }
-                    }
+                    .scaleEffect(menuScale)  // Apply the scaling effect
+                    .animation(.spring(), value: menuScale)  // Animate the scaling effect
+            } else {
+                EmptyView()
             }
         }
     }
-
     // Hexagon
     @ViewBuilder
     private func hexagonSection(geometry: GeometryProxy) -> some View {
