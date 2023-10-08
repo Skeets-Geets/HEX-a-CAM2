@@ -1,4 +1,3 @@
-
 //
 //  ContentView.swift
 //  HEX-a-CAM
@@ -266,22 +265,13 @@ struct ContentView: View {
         if isButtonClicked {
             Button(action: {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.2, blendDuration: 0.5)) {
-
-                    // Reset animation progress to 0 to ensure the hexagon shape remains intact
                     animationProgress = 0
-
-                    // Toggle Save Button visibility
                     hideSaveButton.toggle()
                     if !hideSaveButton {
                         captureButtonScale = 1.0
                     }
-
-                    // Toggle MyColorsMenu visibility
                     isMenuVisible.toggle()
-
-                    // Toggle hexagon and MyColorsMenu scale
                     hexagonScale = isMenuVisible ? 0.1 : 1.0
-                    menuScale = isMenuVisible ? 1.0 : 0.01  // Toggle MyColorsMenu scale
                 }
             }) {
                 ZStack {
@@ -292,7 +282,6 @@ struct ContentView: View {
                             RoundedRectangle(cornerRadius: 20)
                                 .stroke(Color(hex: capturedHexCode), lineWidth: 2)
                         )
-
                     myColorsFrames[currentFrameIndex]
                         .resizable()
                         .scaledToFit()
@@ -313,19 +302,44 @@ struct ContentView: View {
                 }
             }
 
-            // Display MyColorsMenu when isMenuVisible is true
+            Button(action: {
+                print("Save Color button clicked")
+            }) {
+                ZStack {
+                    VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                        .frame(width: 120, height: 25)
+                        .cornerRadius(25)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color(hex: capturedHexCode), lineWidth: 2)
+                        )
+                    Text("Save Color")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color.white)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
+            .offset(y: self.saveButtonOffset - 30)
+            .opacity(saveButtonOpacity)
+            .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: saveButtonOffset)
+            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + saveButtonOffset - 10)
+
             if isMenuVisible {
                 MyColorsMenu(isMenuVisible: $isMenuVisible, hexagonScale: $hexagonScale, gifFrames: myColorsFrames)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black.opacity(0.5))
                     .zIndex(2)
-                    .scaleEffect(menuScale)  // Apply the scaling effect
-                    .animation(.spring(), value: menuScale)  // Animate the scaling effect
-            } else {
-                EmptyView()
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            isMenuVisible = false
+                            hexagonScale = 1.0
+                        }
+                    }
             }
         }
     }
+
+
     // Hexagon
     @ViewBuilder
     private func hexagonSection(geometry: GeometryProxy) -> some View {
