@@ -11,9 +11,10 @@ import SpriteKit
 class MyScene: SKScene {
     var hexagon: SKShapeNode!
     var rotationAngle: CGFloat = 0.0
-    
+    var initialHexagonPositions: [Int: CGPoint] = [:]  // Dictionary to save initial positions
+
     override func didMove(to view: SKView) {
-        self.backgroundColor = .clear  
+        self.backgroundColor = .clear
 
         let path = UIBezierPath()
         let numberOfSides = 6
@@ -34,15 +35,19 @@ class MyScene: SKScene {
         hexagon.lineWidth = 0
         hexagon.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
         addChild(hexagon)
-    }
     
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = touches.first else { return }
-        let location = touch.location(in: self)
-        let previousLocation = touch.previousLocation(in: self)
-        let dx = location.x - previousLocation.x
-        rotationAngle += dx * 0.05
-        hexagon.xScale = cos(rotationAngle)
-    }
-}
 
+    let hexagonID = 1  // Replace with your unique identifier for each hexagon
+           initialHexagonPositions[hexagonID] = hexagon.position
+       }
+
+       override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+           guard let touch = touches.first else { return }
+           let location = touch.location(in: self)
+           let previousLocation = touch.previousLocation(in: self)
+           let dx = location.x - previousLocation.x
+           rotationAngle += dx * 0.05
+           print("dx: \(dx), rotationAngle: \(rotationAngle)")  // Debug print
+           hexagon.xScale = cos(rotationAngle)
+       }
+   }
