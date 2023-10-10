@@ -14,20 +14,20 @@ import Combine
 class NetworkManager: ObservableObject {
     @Published var colorName: String = ""
     @Published var colorImage: UIImage?
-    @Published var colorInfo: ColorInfo?
-    
+    @Published var colorInfo: APIColorInfo?
+
     func fetchColorInfo(hex: String) {
         let urlString = "https://www.thecolorapi.com/id?hex=\(hex.replacingOccurrences(of: "#", with: ""))"
         guard let url = URL(string: urlString) else { return }
-        
+
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error == nil else {
                 print("Error fetching color data: \(String(describing: error))")
                 return
             }
-            
+
             do {
-                let colorInfo = try JSONDecoder().decode(ColorInfo.self, from: data)
+                let colorInfo = try JSONDecoder().decode(APIColorInfo.self, from: data)
                 DispatchQueue.main.async {
                     self.colorInfo = colorInfo
                     self.colorName = colorInfo.name.value
@@ -38,16 +38,16 @@ class NetworkManager: ObservableObject {
             }
         }.resume()
     }
-    
+
     func downloadImage(urlString: String) {
         guard let url = URL(string: urlString) else { return }
-        
+
         URLSession.shared.dataTask(with: url) { data, response, error in
             guard let data = data, error == nil else {
                 print("Error fetching image data: \(String(describing: error))")
                 return
             }
-            
+
             DispatchQueue.main.async {
                 self.colorImage = UIImage(data: data)
             }
@@ -55,9 +55,11 @@ class NetworkManager: ObservableObject {
     }
 }
 
-struct ColorInfo: Decodable {
+
+struct APIColorInfo: Decodable {
     let name: ColorName
     let image: ColorImage
+      
 }
 
 struct ColorName: Decodable {
@@ -67,6 +69,7 @@ struct ColorName: Decodable {
 struct ColorImage: Decodable {
     let bare: String
 }
+
 
 
 

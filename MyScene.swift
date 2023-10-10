@@ -11,11 +11,21 @@ import SpriteKit
 class MyScene: SKScene {
     var hexagon: SKShapeNode!
     var rotationAngle: CGFloat = 0.0
-    var initialHexagonPositions: [Int: CGPoint] = [:]  // Dictionary to save initial positions
+    var initialHexagonPositions: [Int: CGPoint] = [:]
+    var colorInfo: ColorInfo
+
+    init(size: CGSize, colorInfo: ColorInfo) {
+        self.colorInfo = colorInfo
+        super.init(size: size)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func didMove(to view: SKView) {
         self.backgroundColor = .clear
-
+    
         let path = UIBezierPath()
         let numberOfSides = 6
         for i in 0...numberOfSides {
@@ -31,7 +41,7 @@ class MyScene: SKScene {
         path.close()
         
         hexagon = SKShapeNode(path: path.cgPath)
-        hexagon.fillColor = .red
+        hexagon.fillColor = UIColor(colorInfo.color)
         hexagon.lineWidth = 0
         hexagon.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
         addChild(hexagon)

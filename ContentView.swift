@@ -1,3 +1,4 @@
+
 //
 //  ContentView.swift
 //  HEX-a-CAM
@@ -201,11 +202,12 @@ struct ContentView: View {
     @State private var isMenuVisible: Bool = false
     @State private var isMyColorsMenuOpen = false
     @State var menuScale: CGFloat = 0.01
-
+    @State var savedColors: [ColorInfo] = []
 
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     let myColorsFrames: [Image] = (1...19).map { Image("MYcolors-\($0)") }
+
 
     var body: some View {
             GeometryReader { geometry in
@@ -249,11 +251,10 @@ struct ContentView: View {
     @ViewBuilder
     private func cameraSection(geometry: GeometryProxy) -> some View {
         if showCamera {
-            #if !DEBUG
+
             CameraView(expandCamera: $expandCamera, showHexColor: $showHexColor, detectedHexColor: $detectedHexColor)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .animation(Animation.easeInOut(duration: 4), value: expandCamera)
-            #endif
 
         }
     }
@@ -302,37 +303,45 @@ struct ContentView: View {
                 }
             }
 
-            Button(action: {
-                print("Save Color button clicked")
-            }) {
-                ZStack {
-                    VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                        .frame(width: 120, height: 25)
-                        .cornerRadius(25)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color(hex: capturedHexCode), lineWidth: 2)
-                        )
-                    Text("Save Color")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.white)
+            if !isMenuVisible {
+                Button(action: {
+                    networkManager.fetchColorInfo(hex: capturedHexCode)
+                    let newColorInfo = ColorInfo(colorName: networkManager.colorName, hexCode: capturedHexCode, color: Color(hex: capturedHexCode))
+                    savedColors.append(newColorInfo)
+                }) {
+                    ZStack {
+                        VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
+                            .frame(width: 120, height: 25)
+                            .cornerRadius(25)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color(hex: capturedHexCode), lineWidth: 2)
+                            )
+                        Text("Save Color")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.white)
+                    }
                 }
+                .buttonStyle(PlainButtonStyle())
+                .offset(y: self.saveButtonOffset - 30)
+                .opacity(saveButtonOpacity)
+                .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: saveButtonOffset)
+                .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + saveButtonOffset - 10)
             }
-            .buttonStyle(PlainButtonStyle())
-            .offset(y: self.saveButtonOffset - 30)
-            .opacity(saveButtonOpacity)
-            .animation(Animation.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0).delay(0.5), value: saveButtonOffset)
-            .position(x: geometry.size.width / 2, y: geometry.size.height / 2 + saveButtonOffset - 10)
 
             if isMenuVisible {
-                MyColorsMenu(isMenuVisible: $isMenuVisible, hexagonScale: $hexagonScale, gifFrames: myColorsFrames)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.5))
-                    .zIndex(2)
-                    .onTapGesture {
-                        withAnimation(.spring()) {
-                            isMenuVisible = false
-                            hexagonScale = 1.0
+
+                MyColorsMenu(isMenuVisible: $isMenuVisible, hexagonScale: $hexagonScale, gifFrames: [], savedColors: Binding($savedColors))
+
+
+
+                                   .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                   .background(Color.black.opacity(0.5))
+                                   .zIndex(1)
+                                   .onTapGesture {
+                                       withAnimation(.spring()) {
+                                           isMenuVisible = false
+                                           hexagonScale = 1.0
                         }
                     }
             }

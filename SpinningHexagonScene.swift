@@ -9,24 +9,24 @@ import SwiftUI
 import SpriteKit
 
 struct SpinningHexagonScene: UIViewRepresentable {
-    
+    var colorInfo: ColorInfo  // Add this line
+
     func makeUIView(context: Context) -> SKView {
         let view = SKView()
         view.ignoresSiblingOrder = true
-        view.backgroundColor = .clear
+        view.backgroundColor = UIColor.clear  // Modify this line
         return view
-        
     }
-    
+
     func updateUIView(_ uiView: SKView, context: Context) {
-           let scene = MyScene(size: CGSize(width: 300, height: 300))
-           scene.backgroundColor = .clear
-           uiView.presentScene(scene)
-       }
-   }
+        let scene = MyScene(size: CGSize(width: 300, height: 300), colorInfo: colorInfo)  // Modify this line
+        scene.backgroundColor = UIColor.clear  // Modify this line
+        uiView.presentScene(scene)
+    }
+}
 
 struct SpinningHexagonScene_Previews: PreviewProvider {
     static var previews: some View {
-        SpinningHexagonScene()
+        SpinningHexagonScene(colorInfo: ColorInfo(colorName: "Red", hexCode: "#FF0000", color: Color.red))  // Modify this line
     }
 }

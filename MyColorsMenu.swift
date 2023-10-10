@@ -4,97 +4,97 @@
 //
 //  Created by GEET on 10/4/23.
 //
+//
+//  MyColorsMenu.swift
+//  HEX-a-CAM
+//
+//  Created by GEET on 10/4/23.
+//
 import SwiftUI
 import UIKit
 import SpriteKit
 
-struct MyColorsMenu: View {
-    @Binding var isMenuVisible: Bool
-    @Binding var hexagonScale: CGFloat
-    let gifFrames: [Image]
-    @State var menuScale: CGFloat = 0.01
-    @State var selectedHexagon = false
-    @State var rotationAngle: Double = 0
-    @State var selectedIndex: Int? = nil
-    @State var originalHexagonPositions: [Int: CGPoint] = [:]
-    @State var rotationAngles: [Double] = Array(repeating: 0.0, count: 9)
+struct HexagonRow: View {
+    var colorInfo: ColorInfo
+    @Binding var selectedIndex: UUID?
+    @Binding var rotationAngle: Double
+    @State var originalPosition: CGPoint? = nil
 
     var body: some View {
         VStack {
-            if selectedIndex == nil {
-                Text("My Colors")
-                    .font(.largeTitle)
-                    .bold()
+            SpinningHexagonWrapper(isSelected: .constant(selectedIndex == colorInfo.id), rotationAngle: $rotationAngle, hexagonColor: colorInfo.color, swatchImage: nil, colorInfo: colorInfo)
+                .frame(width: selectedIndex == colorInfo.id ? 200 : 70, height: selectedIndex == colorInfo.id ? 200 : 70)
+                .background(Color.clear)
+                .onTapGesture {
+                    withAnimation {
+                        selectedIndex = colorInfo.id
+                    }
+                }
+                .background(GeometryReader { geometry in
+                    Color.clear.onAppear {
+                        self.originalPosition = geometry.frame(in: .global).origin
+                    }
+                })
+                .animation(.spring(), value: selectedIndex)
+
+            Text(colorInfo.colorName)
+                .font(.caption)
+                .foregroundColor(.white)
+                .opacity(selectedIndex == nil || selectedIndex == colorInfo.id ? 1 : 0)
+
+            Text(colorInfo.hexCode)
+                .font(.caption)
+                .foregroundColor(.white)
+                .opacity(selectedIndex == nil || selectedIndex == colorInfo.id ? 1 : 0)
+        }
+    }
+}
+
+
+struct MyColorsMenu: View {
+    @Binding var isMenuVisible: Bool
+    @Binding var hexagonScale: CGFloat
+    let gifFrames: [Image] // New property
+
+    @State var menuScale: CGFloat = 0.01
+    @State var selectedHexagon = false
+    @State var rotationAngle: Double = 0
+    @State var selectedIndex: UUID? = nil
+    @Binding var savedColors: [ColorInfo]?
+
+    var body: some View {
+        VStack {
+            HStack {
+                Spacer()
+                Button("Close") {
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 0.5)) {
+                        self.menuScale = 0.01
+                        isMenuVisible.toggle()
+                        hexagonScale = 1.0
+                    }
+                }
+                .padding()
             }
 
-            ZStack {
-                if let index = selectedIndex {
-                    SpinningHexagonWrapper(isSelected: .constant(true), rotationAngle: $rotationAngles[index])
-                        .frame(width: 300, height: 300)
-                        .background(Color.clear)
-                        .zIndex(1)  // Make sure it appears above other elements
-                        .onTapGesture {
-                            withAnimation {
-                                selectedIndex = nil
-                            }
-                        }
-                        .position(x: (UIScreen.main.bounds.width / 2) - 15.0, y: 100)  // Fixed position at the center top of the menu
+            Text("My Colors")
+                .font(.largeTitle)
+                .bold()
+                .opacity(selectedIndex == nil ? 1 : 0)
 
-                    Button("Back") {
-                        withAnimation {
-                            selectedIndex = nil
-                        }
-                    }
-                    .padding()
-                    .background(Color.clear)
-                    .foregroundColor(Color.yellow)
-                    .cornerRadius(90)
-                    .position(x: 30, y: 360)
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 3), spacing: 20) {
-                            ForEach(0..<9) { index in
-                                SpinningHexagonWrapper(isSelected: .constant(false), rotationAngle: $rotationAngles[index])
-                                    .frame(width: 100, height: 100)
-                                    .background(Color.clear)
-                                    .onTapGesture {
-                                        withAnimation {
-                                            selectedIndex = index
-                                            rotationAngles[index] = 360.0
-                                        }
-                                    }
-                                    .background(GeometryReader { geometry in
-                                        Color.clear.onAppear {
-                                            originalHexagonPositions[index] = geometry.frame(in: .global).origin
-                                        }
-                                    })
-                            }
-                        }
-                    }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 3), spacing: 20) {
+                ForEach(savedColors ?? [], id: \.self) { colorInfo in
+                    HexagonRow(colorInfo: colorInfo, selectedIndex: $selectedIndex, rotationAngle: $rotationAngle)
                 }
             }
             .padding()
-            .frame(height: 400)
             .background(VisualEffectView(effect: UIBlurEffect(style: .dark)))
             .cornerRadius(20)
             .scaleEffect(menuScale)
             .onAppear {
-                withAnimation {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.5, blendDuration: 0.5)) {
                     self.menuScale = 1.0
                 }
             }
         }
     }
 }
-
-
-    struct MyColorsMenu_Previews: PreviewProvider {
-        static var previews: some View {
-            MyColorsMenu(
-                isMenuVisible: .constant(true),
-                hexagonScale: .constant(1.0),
-                gifFrames: [Image("frame1"), Image("frame2")]
-            )
-        }
-    }
-
